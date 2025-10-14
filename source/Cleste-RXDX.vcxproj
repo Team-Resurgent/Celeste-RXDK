@@ -111,7 +111,15 @@
     <PostBuildEvent>
       <Message>Creating Xbox Image...</Message>
       <Command>"$(RXDK_LIBS)bin\patchSubsystem.exe" -i="$(OutDir)$(TargetFileName)" -s=0x000E
-"$(RXDK_LIBS)bin\imagebld.exe" /in:"$(OutDir)$(TargetFileName)" /out:"$(OutDir)$(TargetName).xbe" /nologo /stack:65536 /debug /nolibwarn
+
+"$(RXDK_LIBS)bin\imagebld.exe" ^
+  /in:"$(OutDir)$(TargetFileName)" ^
+  /out:"$(OutDir)$(TargetName).xbe" ^
+  /nologo /stack:65536 /debug /nolibwarn ^
+  /testid:"0xCE1357" /testname:"Celeste" ^
+  /titleimage:"$(ProjectDir)titleimage.xbx" ^
+  /defaultsaveimage:"$(ProjectDir)titleimage.xbx"
+
 MKDIR "$(OutDir)Build\$(ProjectName)\Media"
 COPY /Y "$(OutDir)$(TargetName).xbe" "$(OutDir)Build\$(ProjectName)\default.xbe"
 XCOPY /I /E /S /Y /F "$(ProjectDir)Media\*" "$(OutDir)Build\$(ProjectName)\Media\"
@@ -119,10 +127,8 @@ MKDIR "$(OutDir)XISO"
 "$(RXDK_LIBS)bin\xdvdfs.exe" pack "$(OutDir)Build\$(ProjectName)" "$(OutDir)XISO\$(ProjectName).iso"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>rmdir /S /Q "$(OutDir)Build"
-rmdir /S /Q "$(OutDir)XISO"
-del /Q "$(OutDir)*.xbe"
-del /Q "$(OutDir)*.iso"</Command>
+      <Command>rmdir /S /Q "$(OutDir)"</Command>
+      <Message>Cleaning Previous Builds</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -164,7 +170,15 @@ del /Q "$(OutDir)*.iso"</Command>
     <PostBuildEvent>
       <Message>Creating Xbox Image...</Message>
       <Command>"$(RXDK_LIBS)bin\patchSubsystem.exe" -i="$(OutDir)$(TargetFileName)" -s=0x000E
-"$(RXDK_LIBS)bin\imagebld.exe" /in:"$(OutDir)$(TargetFileName)" /out:"$(OutDir)$(TargetName).xbe" /nologo /stack:65536 /debug /nolibwarn
+
+"$(RXDK_LIBS)bin\imagebld.exe" ^
+  /in:"$(OutDir)$(TargetFileName)" ^
+  /out:"$(OutDir)$(TargetName).xbe" ^
+  /nologo /stack:65536 /debug /nolibwarn ^
+  /testid:"0xCE1357" /testname:"Celeste" ^
+  /titleimage:"$(ProjectDir)titleimage.xbx" ^
+  /defaultsaveimage:"$(ProjectDir)titleimage.xbx"
+
 MKDIR "$(OutDir)Build\$(ProjectName)\Media"
 COPY /Y "$(OutDir)$(TargetName).xbe" "$(OutDir)Build\$(ProjectName)\default.xbe"
 XCOPY /I /E /S /Y /F "$(ProjectDir)Media\*" "$(OutDir)Build\$(ProjectName)\Media\"
@@ -172,10 +186,8 @@ MKDIR "$(OutDir)XISO"
 "$(RXDK_LIBS)bin\xdvdfs.exe" pack "$(OutDir)Build\$(ProjectName)" "$(OutDir)XISO\$(ProjectName).iso"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>rmdir /S /Q "$(OutDir)Build"
-rmdir /S /Q "$(OutDir)XISO"
-del /Q "$(OutDir)*.xbe"
-del /Q "$(OutDir)*.iso"</Command>
+      <Command>rmdir /S /Q "$(OutDir)"</Command>
+      <Message>Cleaning Previous Builds</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
