@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Celeste-RXDX", "Cleste-RXDX.vcxproj", "{C19BFD63-B874-4DD9-AEC7-55D490697CB1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{08806D45-83D0-45C3-AAEA-3B076B3D8CDA} = {08806D45-83D0-45C3-AAEA-3B076B3D8CDA}
+		{7C481C7D-ECA7-4F9E-879C-105784F3543D} = {7C481C7D-ECA7-4F9E-879C-105784F3543D}
+		{A9BE8326-536F-42C4-8022-32F42D472DE4} = {A9BE8326-536F-42C4-8022-32F42D472DE4}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libSDL2x", "..\RXDK-SDL2x\libSDL2x.vcxproj", "{7C481C7D-ECA7-4F9E-879C-105784F3543D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libSDL2x_image", "..\RXDK-SDL2x\libSDL2x_image\libSDL2x_image.vcxproj", "{A9BE8326-536F-42C4-8022-32F42D472DE4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libSDL2x_mixer", "..\RXDK-SDL2x\libSDL2x_mixer\libSDL2x_mixer.vcxproj", "{08806D45-83D0-45C3-AAEA-3B076B3D8CDA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C19BFD63-B874-4DD9-AEC7-55D490697CB1}.Debug|x86.ActiveCfg = Debug|Win32
+		{C19BFD63-B874-4DD9-AEC7-55D490697CB1}.Debug|x86.Build.0 = Debug|Win32
+		{C19BFD63-B874-4DD9-AEC7-55D490697CB1}.Release|x86.ActiveCfg = Release|Win32
+		{C19BFD63-B874-4DD9-AEC7-55D490697CB1}.Release|x86.Build.0 = Release|Win32
+		{7C481C7D-ECA7-4F9E-879C-105784F3543D}.Debug|x86.ActiveCfg = Debug|Win32
+		{7C481C7D-ECA7-4F9E-879C-105784F3543D}.Debug|x86.Build.0 = Debug|Win32
+		{7C481C7D-ECA7-4F9E-879C-105784F3543D}.Release|x86.ActiveCfg = Release|Win32
+		{7C481C7D-ECA7-4F9E-879C-105784F3543D}.Release|x86.Build.0 = Release|Win32
+		{A9BE8326-536F-42C4-8022-32F42D472DE4}.Debug|x86.ActiveCfg = Debug|Win32
+		{A9BE8326-536F-42C4-8022-32F42D472DE4}.Debug|x86.Build.0 = Debug|Win32
+		{A9BE8326-536F-42C4-8022-32F42D472DE4}.Release|x86.ActiveCfg = Release|Win32
+		{A9BE8326-536F-42C4-8022-32F42D472DE4}.Release|x86.Build.0 = Release|Win32
+		{08806D45-83D0-45C3-AAEA-3B076B3D8CDA}.Debug|x86.ActiveCfg = Debug|Win32
+		{08806D45-83D0-45C3-AAEA-3B076B3D8CDA}.Debug|x86.Build.0 = Debug|Win32
+		{08806D45-83D0-45C3-AAEA-3B076B3D8CDA}.Release|x86.ActiveCfg = Release|Win32
+		{08806D45-83D0-45C3-AAEA-3B076B3D8CDA}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B7B05908-13F6-4A0D-88D7-DC6CB00C13C2}
+	EndGlobalSection
+EndGlobal
