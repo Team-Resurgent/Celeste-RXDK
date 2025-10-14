@@ -1322,8 +1322,8 @@ static void ReadGamepadInput(Uint16* out_buttons) {
 	Uint8 dpad = SDL_JoystickGetHat(joystick, 0);
 	Uint8 abutton = SDL_JoystickGetButton(joystick, 0); //Get A-Button(0)
 	Uint8 bbutton = SDL_JoystickGetButton(joystick, 1);
-	Uint8 leftShoulder = SDL_JoystickGetButton(joystick, 6);  // LS
-	Uint8 rightShoulder = SDL_JoystickGetButton(joystick, 7);  // RS
+	Uint8 whitebutton = SDL_JoystickGetButton(joystick,5);
+	Uint8 blackbutton = SDL_JoystickGetButton(joystick, 4);
 	Uint8 startbutton = SDL_JoystickGetButton(joystick, 8);
 	Uint8 backbutton = SDL_JoystickGetButton(joystick, 9); //Get BACK-Button(9)
 
@@ -1341,11 +1341,11 @@ static void ReadGamepadInput(Uint16* out_buttons) {
 
 	prevStart = startbutton;
 
-	// ----- Load/Save combos on LT Or RT press -----
-	if (leftShoulder) {
+	// ----- Load/Save combos on White Button Or Black Button press -----
+	if (whitebutton) {
 		*out_buttons |= (1 << PSEUDO_BTN_SAVE_STATE); // save
 	}
-	if (rightShoulder) {
+	if (blackbutton) {
 		*out_buttons |= (1 << PSEUDO_BTN_LOAD_STATE); // load
 	}
 

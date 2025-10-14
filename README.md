@@ -1,8 +1,5 @@
 # Celeste-RXDK
 
-[![CMake](https://github.com/ngagesdk/ccleste/actions/workflows/cmake.yml/badge.svg)](https://github.com/ngagesdk/ccleste/actions/workflows/cmake.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/5216ba1db09c4dccb561018156e1e4b1)](https://www.codacy.com/gh/ngagesdk/ccleste/dashboard?utm_source=github.com&utm_medium=referral&utm_content=ngagesdk/ccleste&utm_campaign=Badge_Grade)
-
 [![Celeste 1](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-01-tn.png)](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-01.png?raw=true "Celeste 1")
 [![Celeste 2](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-02-tn.png)](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-02.png?raw=true "Celeste 2")
 
@@ -17,8 +14,8 @@
 - A Button - Jump
 - B Button - Dash
 - Start Button - Pause
-- Left Shoulder Button- Save State
-- Right Shoulder Button - Load State
+- White Button- Save State
+- Black Button - Load State
 - Start + Back Button - Exit Game
 
 
