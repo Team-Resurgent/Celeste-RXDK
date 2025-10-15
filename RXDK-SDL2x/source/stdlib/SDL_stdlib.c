@@ -557,37 +557,35 @@ _ftol2_sse()
 }
 
 /* 64-bit math operators for 32-bit systems */
-
-//Not Need For Celeste Build
-//void
-//__declspec(naked)
-//_allmul()
-//{
-//	/* *INDENT-OFF* */
-//	__asm {
-//		mov         eax, dword ptr[esp + 8]
-//		mov         ecx, dword ptr[esp + 10h]
-//		or ecx, eax
-//		mov         ecx, dword ptr[esp + 0Ch]
-//		jne         hard
-//		mov         eax, dword ptr[esp + 4]
-//		mul         ecx
-//		ret         10h
-//		hard :
-//		push        ebx
-//			mul         ecx
-//			mov         ebx, eax
-//			mov         eax, dword ptr[esp + 8]
-//			mul         dword ptr[esp + 14h]
-//			add         ebx, eax
-//			mov         eax, dword ptr[esp + 8]
-//			mul         ecx
-//			add         edx, ebx
-//			pop         ebx
-//			ret         10h
-//	}
-//	/* *INDENT-ON* */
-//}
+void
+__declspec(naked)
+_allmul()
+{
+	/* *INDENT-OFF* */
+	__asm {
+		mov         eax, dword ptr[esp + 8]
+		mov         ecx, dword ptr[esp + 10h]
+		or ecx, eax
+		mov         ecx, dword ptr[esp + 0Ch]
+		jne         hard
+		mov         eax, dword ptr[esp + 4]
+		mul         ecx
+		ret         10h
+		hard :
+		push        ebx
+			mul         ecx
+			mov         ebx, eax
+			mov         eax, dword ptr[esp + 8]
+			mul         dword ptr[esp + 14h]
+			add         ebx, eax
+			mov         eax, dword ptr[esp + 8]
+			mul         ecx
+			add         edx, ebx
+			pop         ebx
+			ret         10h
+	}
+	/* *INDENT-ON* */
+}
 
 void
 __declspec(naked)
@@ -995,107 +993,105 @@ _alldvrm()
 	/* *INDENT-ON* */
 }
 
-// Not Needed For Celeste Build.
-//void
-//__declspec(naked)
-//_aulldvrm()
-//{
-//	/* *INDENT-OFF* */
-//	__asm {
-//		push        esi
-//		mov         eax, dword ptr[esp + 14h]
-//		or eax, eax
-//		jne         L1
-//		mov         ecx, dword ptr[esp + 10h]
-//		mov         eax, dword ptr[esp + 0Ch]
-//		xor edx, edx
-//		div         ecx
-//		mov         ebx, eax
-//		mov         eax, dword ptr[esp + 8]
-//		div         ecx
-//		mov         esi, eax
-//		mov         eax, ebx
-//		mul         dword ptr[esp + 10h]
-//		mov         ecx, eax
-//		mov         eax, esi
-//		mul         dword ptr[esp + 10h]
-//		add         edx, ecx
-//		jmp         L2
-//		L1 :
-//		mov         ecx, eax
-//			mov         ebx, dword ptr[esp + 10h]
-//			mov         edx, dword ptr[esp + 0Ch]
-//			mov         eax, dword ptr[esp + 8]
-//			L3 :
-//			shr         ecx, 1
-//			rcr         ebx, 1
-//			shr         edx, 1
-//			rcr         eax, 1
-//			or ecx, ecx
-//			jne         L3
-//			div         ebx
-//			mov         esi, eax
-//			mul         dword ptr[esp + 14h]
-//			mov         ecx, eax
-//			mov         eax, dword ptr[esp + 10h]
-//			mul         esi
-//			add         edx, ecx
-//			jb          L4
-//			cmp         edx, dword ptr[esp + 0Ch]
-//			ja          L4
-//			jb          L5
-//			cmp         eax, dword ptr[esp + 8]
-//			jbe         L5
-//			L4 :
-//		dec         esi
-//			sub         eax, dword ptr[esp + 10h]
-//			sbb         edx, dword ptr[esp + 14h]
-//			L5 :
-//			xor ebx, ebx
-//			L2 :
-//		sub         eax, dword ptr[esp + 8]
-//			sbb         edx, dword ptr[esp + 0Ch]
-//			neg         edx
-//			neg         eax
-//			sbb         edx, 0
-//			mov         ecx, edx
-//			mov         edx, ebx
-//			mov         ebx, ecx
-//			mov         ecx, eax
-//			mov         eax, esi
-//			pop         esi
-//			ret         10h
-//	}
-//	/* *INDENT-ON* */
-//}
+void
+__declspec(naked)
+_aulldvrm()
+{
+	/* *INDENT-OFF* */
+	__asm {
+		push        esi
+		mov         eax, dword ptr[esp + 14h]
+		or eax, eax
+		jne         L1
+		mov         ecx, dword ptr[esp + 10h]
+		mov         eax, dword ptr[esp + 0Ch]
+		xor edx, edx
+		div         ecx
+		mov         ebx, eax
+		mov         eax, dword ptr[esp + 8]
+		div         ecx
+		mov         esi, eax
+		mov         eax, ebx
+		mul         dword ptr[esp + 10h]
+		mov         ecx, eax
+		mov         eax, esi
+		mul         dword ptr[esp + 10h]
+		add         edx, ecx
+		jmp         L2
+		L1 :
+		mov         ecx, eax
+			mov         ebx, dword ptr[esp + 10h]
+			mov         edx, dword ptr[esp + 0Ch]
+			mov         eax, dword ptr[esp + 8]
+			L3 :
+			shr         ecx, 1
+			rcr         ebx, 1
+			shr         edx, 1
+			rcr         eax, 1
+			or ecx, ecx
+			jne         L3
+			div         ebx
+			mov         esi, eax
+			mul         dword ptr[esp + 14h]
+			mov         ecx, eax
+			mov         eax, dword ptr[esp + 10h]
+			mul         esi
+			add         edx, ecx
+			jb          L4
+			cmp         edx, dword ptr[esp + 0Ch]
+			ja          L4
+			jb          L5
+			cmp         eax, dword ptr[esp + 8]
+			jbe         L5
+			L4 :
+		dec         esi
+			sub         eax, dword ptr[esp + 10h]
+			sbb         edx, dword ptr[esp + 14h]
+			L5 :
+			xor ebx, ebx
+			L2 :
+		sub         eax, dword ptr[esp + 8]
+			sbb         edx, dword ptr[esp + 0Ch]
+			neg         edx
+			neg         eax
+			sbb         edx, 0
+			mov         ecx, edx
+			mov         edx, ebx
+			mov         ebx, ecx
+			mov         ecx, eax
+			mov         eax, esi
+			pop         esi
+			ret         10h
+	}
+	/* *INDENT-ON* */
+}
 
-//Not Needed For Celeste Build.
-//void
-//__declspec(naked)
-//_allshl()
-//{
-//	/* *INDENT-OFF* */
-//	__asm {
-//		cmp         cl, 40h
-//		jae         RETZERO
-//		cmp         cl, 20h
-//		jae         MORE32
-//		shld        edx, eax, cl
-//		shl         eax, cl
-//		ret
-//		MORE32 :
-//		mov         edx, eax
-//			xor eax, eax
-//			and cl, 1Fh
-//			shl         edx, cl
-//			ret
-//			RETZERO :
-//		xor eax, eax
-//			xor edx, edx
-//			ret
-//	}
-//	/* *INDENT-ON* */
-//}
+void
+__declspec(naked)
+_allshl()
+{
+	/* *INDENT-OFF* */
+	__asm {
+		cmp         cl, 40h
+		jae         RETZERO
+		cmp         cl, 20h
+		jae         MORE32
+		shld        edx, eax, cl
+		shl         eax, cl
+		ret
+		MORE32 :
+		mov         edx, eax
+			xor eax, eax
+			and cl, 1Fh
+			shl         edx, cl
+			ret
+			RETZERO :
+		xor eax, eax
+			xor edx, edx
+			ret
+	}
+	/* *INDENT-ON* */
+}
 
 void
 __declspec(naked)
