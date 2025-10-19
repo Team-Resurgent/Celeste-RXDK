@@ -45,6 +45,7 @@ SDL_Renderer* renderer;
 SDL_Texture* texture;
 
 SDL_Surface* screen = NULL;
+SDL_Rect screen_dstRect;
 //SDL_Surface* screenReal = NULL;
 SDL_Surface* gfx = NULL;
 SDL_Surface* font = NULL;
@@ -283,47 +284,70 @@ static Mix_Music* game_state_music = NULL;
 static void mainLoop(void);
 static FILE* TAS = NULL;
 
-#ifdef _3DS
-// hack: newer SDL versions remove SDL_N3DSKeyBind, but I'm too lazy to change the
-// code to properly use SDL_Joystick inputs on 3DS so work around it ...
-static short n3ds_key_map[32];
-
-static void SDL_N3DSKeyBind(int n3dskey, int kbkey) {
-	for (int i = 0; i < 32; i++)
-		if (n3dskey & (1u << i))
-			n3ds_key_map[i] = kbkey;
-}
-#define SDL_GetKeyState n3ds_get_fake_key_state
-static Uint8 *n3ds_get_fake_key_state(int *numkeys) {
-	static Uint8 st[SDLK_LAST];
-	if (numkeys) *numkeys = SDLK_LAST;
-
-	memset(st, 0, sizeof st);
-	hidScanInput();
-	Uint32 down = hidKeysDown();
-	Uint32 held = hidKeysHeld();
-	for (int i = 0; i < 32; i++) {
-		st[n3ds_key_map[i]] |= (held & (1u << i)) != 0;
-		if (down & (1u << i)) {
-			SDL_Event ev;
-			ev.type = SDL_KEYDOWN;
-			ev.key.keysym.sym = n3ds_key_map[i];
-			SDL_PushEvent(&ev);
-		}
-	}
-
-	return st;
-}
-#endif
-
 SDL_Joystick* joystick = NULL;
 
+// TODO: Clean up
+int SCREEN_WIDTH  = 1920;
+int SCREEN_HEIGHT = 1080;
+
+SDL_Rect get_integer_scale_rectangle() {
+	// Calculate the maximum integer scale that fits within the target resolution
+	int scale_x = SCREEN_WIDTH / (PICO8_W * scale);
+	int scale_y = SCREEN_HEIGHT / (PICO8_H * scale);
+	int xscale = min(scale_x, scale_y);
+
+	// Calculate the scaled dimensions
+	int scaled_width = (PICO8_W * scale) * xscale;
+	int scaled_height = (PICO8_H * scale) * xscale;
+
+	// Calculate padding to center the image
+	int pad_x = (SCREEN_WIDTH - scaled_width) / 2;
+	int pad_y = (SCREEN_HEIGHT - scaled_height) / 2;
+
+	SDL_Rect dstRect = { pad_x, pad_y, scaled_width, scaled_height };
+	return dstRect;
+}
+
+SDL_Rect get_streteched_aspect_rectangle() {
+	// Calculate the maximum integer scale that fits within the target resolution
+	float scale_x = SCREEN_WIDTH / (PICO8_W * scale);
+	float scale_y = SCREEN_HEIGHT / (PICO8_H * scale);
+	float xscale = min(scale_x, scale_y);
+
+	int scaled_width;
+	int scaled_height;
+	int pad_x;
+	int pad_y;
+
+	if (scale_x > scale_y) {
+		// Calculate the scaled dimensions
+		scaled_width = (PICO8_W * scale) * xscale;
+		scaled_height = SCREEN_HEIGHT;
+
+		// Calculate padding to center the image
+		pad_x = (SCREEN_WIDTH - scaled_width) / 2;
+		pad_y = 0;
+	}
+	else {
+		// Calculate the scaled dimensions
+		scaled_width = SCREEN_WIDTH;
+		scaled_height = (PICO8_H * scale) * xscale;
+
+		// Calculate padding to center the image
+		pad_x = 0;
+		pad_y = (SCREEN_HEIGHT - scaled_height) / 2;
+	}
+
+	SDL_Rect dstRect = { pad_x, pad_y, scaled_width, scaled_height };
+	return dstRect;
+}
+
+SDL_Rect get_streteched_rectangle() {
+	SDL_Rect dstRect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+	return dstRect;
+}
+
 int mainy(){   //int argc, char** argv) {
-
-	//HCF Initializations
-	//room.x = 0;
-	//room.y = 0;
-
 	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
 #if SDL_MAJOR_VERSION >= 2
 	//HCF
@@ -341,38 +365,37 @@ int mainy(){   //int argc, char** argv) {
 		{
 			SDL_Delay(500);
 		}
-
 	} while (joystick == 0);
-
-
 #endif
+
 	int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
-#ifdef _3DS
-	fsInit();
-	romfsInit();
-	videoflag = SDL_DOUBLEBUF | SDL_HWSURFACE | SDL_CONSOLEBOTTOM | SDL_TOPSCR;
-	SDL_N3DSKeyBind(KEY_A, SDLK_z);
-	SDL_N3DSKeyBind(KEY_X|KEY_B, SDLK_x);
-	SDL_N3DSKeyBind(KEY_CPAD_UP|KEY_CSTICK_UP|KEY_DUP, SDLK_UP);
-	SDL_N3DSKeyBind(KEY_CPAD_DOWN|KEY_CSTICK_DOWN|KEY_DDOWN, SDLK_DOWN);
-	SDL_N3DSKeyBind(KEY_CPAD_LEFT|KEY_CSTICK_LEFT|KEY_DLEFT, SDLK_LEFT);
-	SDL_N3DSKeyBind(KEY_CPAD_RIGHT|KEY_CSTICK_RIGHT|KEY_DRIGHT, SDLK_RIGHT);
-	SDL_N3DSKeyBind(KEY_SELECT, SDLK_F11); //to switch full screen
-	SDL_N3DSKeyBind(KEY_START, SDLK_ESCAPE); //to pause
-	
-	SDL_N3DSKeyBind(KEY_Y, SDLK_LSHIFT); //hold to reset / load/save state
-	SDL_N3DSKeyBind(KEY_L, SDLK_d); //load state
-	SDL_N3DSKeyBind(KEY_R, SDLK_s); //save state
-#endif
+#
 	//HCF
-	 //SDL_CHECK(screenReal = SDL_SetVideoMode(640, 480, 32, videoflag));
-	//SDL_CHECK(screenReal = SDL_SetVideoMode(640, 480, 16, videoflag));
-
+	//SDL_CHECK(screenReal = SDL_SetVideoMode(640, 480, 32, videoflag));
 	window = SDL_CreateWindow("Escalado SDL2",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		640, 480, SDL_WINDOW_FULLSCREEN);
+		SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 
+	// Check what res we actually got and prepare the destRect
+	SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+	int screen_scaling_mode = 1;
+
+	switch (screen_scaling_mode) {
+	case 0:
+		screen_dstRect = get_integer_scale_rectangle();
+		break;
+	case 1:
+		screen_dstRect = get_streteched_aspect_rectangle();
+		break;
+	case 2:
+		screen_dstRect = get_streteched_rectangle();
+		break;
+	default:
+		screen_dstRect = get_integer_scale_rectangle();
+		break;
+	}
 
 	// Para controlar calidad de escalado
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0); // "linear");
@@ -380,37 +403,20 @@ int mainy(){   //int argc, char** argv) {
 	/*
 	SDL_CHECK(screenReal = SDL_SetVideoMode(640, 480, 16, videoflag));
 	*/
-	 
-	/*
-	texture = SDL_CreateTexture(
-		renderer,
-		SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_STREAMING,
-		128, 128
-	);
-	*/
-	
 
 	screen = SDL_CreateRGBSurface(
-		 0,            // flags
-		 128*scale,        // ancho
-		 128*scale,       // alto
-		 32,  // profundidad
-		0x00FF0000,     // máscara roja
-		0x0000FF00,     // máscara verde
-		0x000000FF,     // máscara azul
-		0xFF000000      // máscara alfa
+		0,               // flags
+		PICO8_W * scale, // ancho
+		PICO8_H * scale, // alto
+		32,              // profundidad
+		0x00FF0000,      // mÃ¡scara roja
+		0x0000FF00,      // mÃ¡scara verde
+		0x000000FF,      // mÃ¡scara azul
+		0xFF000000       // mÃ¡scara alfa
 	 );
-	 
-	 //SDL_CHECK(screen = SDL_SetVideoMode(320, 240, 32, videoflag)); //NO VA!!
-	
-	//SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
-	
-	//HCF
-	//SDL_WM_SetCaption("Celeste", NULL);
-	
+
 	int mixflag = MIX_INIT_OGG;
-	 //int mixflag = MIX_INIT_MP3;
+	//int mixflag = MIX_INIT_MP3;
 	if (Mix_Init(mixflag) != mixflag) {
 		ErrLog("Mix_Init: %s\n", Mix_GetError());
 		//HCF: FALLA AQUI!!!
@@ -422,18 +428,7 @@ int mainy(){   //int argc, char** argv) {
 	ResetPalette();
 	SDL_ShowCursor(0);
 
-	//HCF-2022
-	/*
-	if (argc > 1) {
-		TAS = fopen(argv[1], "r");
-		if (!TAS) {
-			printf("couldn't open TAS file '%s': %s\n", argv[1], strerror(errno));
-		}
-	}
-	*/
-
 	//printf("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
-
 	//printf("now loading...\n");
 
 	{
@@ -488,11 +483,9 @@ int mainy(){   //int argc, char** argv) {
 
 		// Convertir a textura
 		SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, screen);
-		// Rect destino = tamaño ventana (640x480)
-		SDL_Rect dstRect = { 0, 0, 640, 480 };
 		SDL_RenderClear(renderer);
 		// Renderizar la textura escalada
-		SDL_RenderCopy(renderer, texture, NULL, &dstRect);
+		SDL_RenderCopy(renderer, texture, NULL, &screen_dstRect);
 		SDL_RenderPresent(renderer);
 		SDL_DestroyTexture(texture);
 
@@ -769,11 +762,9 @@ static void mainLoop(void) {
 
 	// Convertir a textura
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, screen);
-	// Rect destino = tamaño ventana (640x480)
-	SDL_Rect dstRect = { 0, 0, 640, 480 };
 	SDL_RenderClear(renderer);
 	// Renderizar la textura escalada
-	SDL_RenderCopy(renderer, texture, NULL, &dstRect);
+	SDL_RenderCopy(renderer, texture, NULL, &screen_dstRect);
 	SDL_RenderPresent(renderer);
 	SDL_DestroyTexture(texture);
 
@@ -1322,8 +1313,8 @@ static void ReadGamepadInput(Uint16* out_buttons) {
 	Uint8 dpad = SDL_JoystickGetHat(joystick, 0);
 	Uint8 abutton = SDL_JoystickGetButton(joystick, 0); //Get A-Button(0)
 	Uint8 bbutton = SDL_JoystickGetButton(joystick, 1);
-	Uint8 whitebutton = SDL_JoystickGetButton(joystick,5);
-	Uint8 blackbutton = SDL_JoystickGetButton(joystick, 4);
+	Uint8 whitebutton = SDL_JoystickGetButton(joystick,5);  // LS
+	Uint8 blackbutton = SDL_JoystickGetButton(joystick, 4);  // RS
 	Uint8 startbutton = SDL_JoystickGetButton(joystick, 8);
 	Uint8 backbutton = SDL_JoystickGetButton(joystick, 9); //Get BACK-Button(9)
 
