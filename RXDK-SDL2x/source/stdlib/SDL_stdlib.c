@@ -557,6 +557,8 @@ _ftol2_sse()
 }
 
 /* 64-bit math operators for 32-bit systems */
+
+//Not Need For Celeste Build
 void
 __declspec(naked)
 _allmul()
@@ -993,6 +995,7 @@ _alldvrm()
 	/* *INDENT-ON* */
 }
 
+// Not Needed For Celeste Build.
 void
 __declspec(naked)
 _aulldvrm()
@@ -1066,6 +1069,7 @@ _aulldvrm()
 	/* *INDENT-ON* */
 }
 
+//Not Needed For Celeste Build.
 void
 __declspec(naked)
 _allshl()

@@ -20,7 +20,7 @@
 #include "celeste.h"
 
 static void ErrLog(char* fmt, ...) {
-	
+
 #ifdef _3DS
 	/*FILE* f = fopen("sdmc:/ccleste.txt", "a");
 	if (!f) return;
@@ -45,11 +45,12 @@ SDL_Renderer* renderer;
 SDL_Texture* texture;
 
 SDL_Surface* screen = NULL;
+SDL_Rect screen_dstRect;
 //SDL_Surface* screenReal = NULL;
 SDL_Surface* gfx = NULL;
 SDL_Surface* font = NULL;
-Mix_Chunk* snd[64] = {NULL};
-Mix_Music* mus[6] = {NULL};
+Mix_Chunk* snd[64] = { NULL };
+Mix_Music* mus[6] = { NULL };
 
 #define PICO8_W 128
 #define PICO8_H 128
@@ -82,8 +83,8 @@ static const SDL_Color base_palette[16] = {
 static SDL_Color palette[16];
 
 static inline Uint32 getcolor(char idx) {
-	SDL_Color c = palette[idx%16];
-	return SDL_MapRGB(screen->format, c.r,c.g,c.b);
+	SDL_Color c = palette[idx % 16];
+	return SDL_MapRGB(screen->format, c.r, c.g, c.b);
 }
 
 static void ResetPalette(void) {
@@ -110,26 +111,26 @@ static char* GetDataPath(char* path, int n, const char* fname) {
 	return path;
 }
 
-static Uint32 getpixel(SDL_Surface *surface, int x, int y) {
+static Uint32 getpixel(SDL_Surface* surface, int x, int y) {
 	int bpp = surface->format->BytesPerPixel;
 	/* Here p is the address to the pixel we want to retrieve */
-	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+	Uint8* p = (Uint8*)surface->pixels + y * surface->pitch + x * bpp;
 
-	switch(bpp) {
-		case 1:
-			return *p;
+	switch (bpp) {
+	case 1:
+		return *p;
 
-		case 2:
-			return *(Uint16 *)p;
+	case 2:
+		return *(Uint16*)p;
 
-		case 3:
-			if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
-				return p[0] << 16 | p[1] << 8 | p[2];
-			else
-				return p[0] | p[1] << 8 | p[2] << 16;
+	case 3:
+		if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
+			return p[0] << 16 | p[1] << 8 | p[2];
+		else
+			return p[0] | p[1] << 8 | p[2] << 16;
 
-		case 4:
-			return *(Uint32 *)p;
+	case 4:
+		return *(Uint32*)p;
 	}
 	return 0;
 }
@@ -147,14 +148,14 @@ static void loadbmpscale(char* filename, SDL_Surface** s) {
 
 	int w = bmp->w, h = bmp->h;
 
-	surf = SDL_CreateRGBSurface(SDL_SWSURFACE, w*scale, h*scale, 8, 0,0,0,0);
+	surf = SDL_CreateRGBSurface(SDL_SWSURFACE, w * scale, h * scale, 8, 0, 0, 0, 0);
 	assert(surf != NULL);
 	unsigned char* data = surf->pixels;
 	/*memcpy((_S)->format->palette->colors, base_palette, 16*sizeof(SDL_Color));*/
 	for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
 		unsigned char pix = getpixel(bmp, x, y);
 		for (int i = 0; i < scale; i++) for (int j = 0; j < scale; j++) {
-			data[x*scale+i + (y*scale+j)*w*scale] = pix;
+			data[x * scale + i + (y * scale + j) * w * scale] = pix;
 		}
 	}
 	SDL_FreeSurface(bmp);
@@ -171,12 +172,12 @@ static void LoadData(void) {
 	LOGLOAD("gfx.bmp");
 	loadbmpscale("gfx.bmp", &gfx);
 	LOGDONE();
-	
+
 	LOGLOAD("font.bmp");
 	loadbmpscale("font.bmp", &font);
 	LOGDONE();
 
-	static const char sndids[] = {0,1,2,3,4,5,6,7,8,9,13,14,15,16,23,35,37,38,40,50,51,54,55};
+	static const char sndids[] = { 0,1,2,3,4,5,6,7,8,9,13,14,15,16,23,35,37,38,40,50,51,54,55 };
 	for (int iid = 0; iid < sizeof sndids; iid++) {
 		int id = sndids[iid];
 		char fname[20];
@@ -190,22 +191,22 @@ static void LoadData(void) {
 		}
 		LOGDONE();
 	}
-	static const char musids[] = {0,10,20,30,40};
+	static const char musids[] = { 0,10,20,30,40 };
 	for (int iid = 0; iid < sizeof musids; iid++) {
 		int id = musids[iid];
 		char fname[20];
-		
+
 		//HCF Because only WAV is supported in SDL2 currently
 		sprintf(fname, "mus%i.WAV", id);
 		//sprintf(fname, "mus%i.ogg", id);
-		
+
 		LOGLOAD(fname);
 		char path[4096];
 		GetDataPath(path, sizeof path, fname);
-		mus[id/10] = Mix_LoadMUS(path);
+		mus[id / 10] = Mix_LoadMUS(path);
 		//mus[id / 10] = Mix_LoadMUS("D:\\data\\mus0.wav");
 
-		if (!mus[id/10]) {
+		if (!mus[id / 10]) {
 			ErrLog("mus%i: Mix_LoadMUS: %s\n", id, Mix_GetError());
 
 			//HCF ESTA DANDO ERROR AQUI!!!
@@ -266,13 +267,26 @@ static void OSDdraw(void) {
 		//HCF
 		//const int x = 64 + 4;
 		const int x = 4;
-		const int y = 120 + (osd_timer < 10 ? 10-osd_timer : 0); //disappear by going below the screen
-		p8_rectfill(x-2, y-2, x+4*strlen(osd_text), y+6, 6); //outline
-		p8_rectfill(x-1, y-1, x+4*strlen(osd_text)-1, y+5, 0);
+		const int y = 120 + (osd_timer < 10 ? 10 - osd_timer : 0); //disappear by going below the screen
+		p8_rectfill(x - 2, y - 2, x + 4 * strlen(osd_text), y + 6, 6); //outline
+		p8_rectfill(x - 1, y - 1, x + 4 * strlen(osd_text) - 1, y + 5, 0);
 		p8_print(osd_text, x, y, 7);
 	}
 }
-	
+
+static void DrawPausedBanner(void) {
+	const char* t = "PAUSED";
+	const int tw = 4 * (int)strlen(t);     // p8_print is 4px per char
+	const int x0 = (PICO8_W - tw) / 2;
+	const int y0 = 8;
+
+	p8_rectfill(x0 - 1, y0 - 1, x0 + tw + 1, y0 + 6 + 1, 6);
+	p8_rectfill(x0, y0, x0 + tw, y0 + 6, 0);
+	p8_print(t, x0 + 1, y0 + 1, 7);
+}
+
+
+
 static Mix_Music* current_music = NULL;
 static _Bool enable_screenshake = 1;
 static _Bool paused = 0;
@@ -283,47 +297,71 @@ static Mix_Music* game_state_music = NULL;
 static void mainLoop(void);
 static FILE* TAS = NULL;
 
-#ifdef _3DS
-// hack: newer SDL versions remove SDL_N3DSKeyBind, but I'm too lazy to change the
-// code to properly use SDL_Joystick inputs on 3DS so work around it ...
-static short n3ds_key_map[32];
-
-static void SDL_N3DSKeyBind(int n3dskey, int kbkey) {
-	for (int i = 0; i < 32; i++)
-		if (n3dskey & (1u << i))
-			n3ds_key_map[i] = kbkey;
-}
-#define SDL_GetKeyState n3ds_get_fake_key_state
-static Uint8 *n3ds_get_fake_key_state(int *numkeys) {
-	static Uint8 st[SDLK_LAST];
-	if (numkeys) *numkeys = SDLK_LAST;
-
-	memset(st, 0, sizeof st);
-	hidScanInput();
-	Uint32 down = hidKeysDown();
-	Uint32 held = hidKeysHeld();
-	for (int i = 0; i < 32; i++) {
-		st[n3ds_key_map[i]] |= (held & (1u << i)) != 0;
-		if (down & (1u << i)) {
-			SDL_Event ev;
-			ev.type = SDL_KEYDOWN;
-			ev.key.keysym.sym = n3ds_key_map[i];
-			SDL_PushEvent(&ev);
-		}
-	}
-
-	return st;
-}
-#endif
-
 SDL_Joystick* joystick = NULL;
 
-int mainy(){   //int argc, char** argv) {
+// TODO: Clean up
+int SCREEN_WIDTH = 1920;
+int SCREEN_HEIGHT = 1080;
 
-	//HCF Initializations
-	//room.x = 0;
-	//room.y = 0;
+// === scaling & pause menu state ===
+enum { SCALE_INT = 0, SCALE_ASPECT = 1, SCALE_STRETCH = 2 };
+static int screen_scaling_mode = SCALE_INT;   // runtime-selected scaling
 
+static _Bool pause_menu_active = 0;
+static int pause_menu_index = 0;              // 0: Scaling row, 1: Apply, 2: Resume
+static int pause_scaling_choice = 0;          // temp choice while paused
+static const char* scaling_names[] = { "Integer", "Aspect", "Stretched" };
+
+SDL_Rect get_integer_scale_rectangle() {
+	// Calculate the maximum integer scale that fits within the target resolution
+	int scale_x = SCREEN_WIDTH / (PICO8_W * scale);
+	int scale_y = SCREEN_HEIGHT / (PICO8_H * scale);
+	int xscale = min(scale_x, scale_y);
+
+	// Calculate the scaled dimensions
+	int scaled_width = (PICO8_W * scale) * xscale;
+	int scaled_height = (PICO8_H * scale) * xscale;
+
+	// Calculate padding to center the image
+	int pad_x = (SCREEN_WIDTH - scaled_width) / 2;
+	int pad_y = (SCREEN_HEIGHT - scaled_height) / 2;
+
+	SDL_Rect dstRect = { pad_x, pad_y, scaled_width, scaled_height };
+	return dstRect;
+}
+
+SDL_Rect get_streteched_aspect_rectangle() {
+	// uniform scale that fits inside the window
+	float sx = (float)SCREEN_WIDTH / (PICO8_W * scale);
+	float sy = (float)SCREEN_HEIGHT / (PICO8_H * scale);
+	float s = (sx < sy) ? sx : sy;
+
+	int w = (int)((PICO8_W * scale) * s + 0.5f);
+	int h = (int)((PICO8_H * scale) * s + 0.5f);
+
+	int x = (SCREEN_WIDTH - w) / 2;
+	int y = (SCREEN_HEIGHT - h) / 2;
+
+	SDL_Rect dstRect = { x, y, w, h };
+	return dstRect;
+}
+
+
+SDL_Rect get_streteched_rectangle() {
+	SDL_Rect dstRect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+	return dstRect;
+}
+
+static void RecomputeScreenDstRect(void) {
+	switch (screen_scaling_mode) {
+	case SCALE_INT:     screen_dstRect = get_integer_scale_rectangle(); break;
+	case SCALE_ASPECT:  screen_dstRect = get_streteched_aspect_rectangle(); break;
+	case SCALE_STRETCH: screen_dstRect = get_streteched_rectangle(); break;
+	default:            screen_dstRect = get_integer_scale_rectangle(); break;
+	}
+}
+
+int mainy() {   //int argc, char** argv) {
 	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
 #if SDL_MAJOR_VERSION >= 2
 	//HCF
@@ -341,76 +379,60 @@ int mainy(){   //int argc, char** argv) {
 		{
 			SDL_Delay(500);
 		}
-
 	} while (joystick == 0);
-
-
 #endif
+
 	int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
-#ifdef _3DS
-	fsInit();
-	romfsInit();
-	videoflag = SDL_DOUBLEBUF | SDL_HWSURFACE | SDL_CONSOLEBOTTOM | SDL_TOPSCR;
-	SDL_N3DSKeyBind(KEY_A, SDLK_z);
-	SDL_N3DSKeyBind(KEY_X|KEY_B, SDLK_x);
-	SDL_N3DSKeyBind(KEY_CPAD_UP|KEY_CSTICK_UP|KEY_DUP, SDLK_UP);
-	SDL_N3DSKeyBind(KEY_CPAD_DOWN|KEY_CSTICK_DOWN|KEY_DDOWN, SDLK_DOWN);
-	SDL_N3DSKeyBind(KEY_CPAD_LEFT|KEY_CSTICK_LEFT|KEY_DLEFT, SDLK_LEFT);
-	SDL_N3DSKeyBind(KEY_CPAD_RIGHT|KEY_CSTICK_RIGHT|KEY_DRIGHT, SDLK_RIGHT);
-	SDL_N3DSKeyBind(KEY_SELECT, SDLK_F11); //to switch full screen
-	SDL_N3DSKeyBind(KEY_START, SDLK_ESCAPE); //to pause
-	
-	SDL_N3DSKeyBind(KEY_Y, SDLK_LSHIFT); //hold to reset / load/save state
-	SDL_N3DSKeyBind(KEY_L, SDLK_d); //load state
-	SDL_N3DSKeyBind(KEY_R, SDLK_s); //save state
-#endif
+#
 	//HCF
-	 //SDL_CHECK(screenReal = SDL_SetVideoMode(640, 480, 32, videoflag));
-	//SDL_CHECK(screenReal = SDL_SetVideoMode(640, 480, 16, videoflag));
+	//SDL_CHECK(screenReal = SDL_SetVideoMode(640, 480, 32, videoflag));
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");  // "nearest" / "0" / "1" / "2"
 
+	// 1) Create window
 	window = SDL_CreateWindow("Escalado SDL2",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		640, 480, SDL_WINDOW_FULLSCREEN);
+		SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 
+	// 2) Create renderer
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
+	// 3) Use renderer's real backbuffer size as the source of truth
+	int rw = 0, rh = 0;
+	if (renderer && SDL_GetRendererOutputSize(renderer, &rw, &rh) == 0) {
+		SCREEN_WIDTH = rw;
+		SCREEN_HEIGHT = rh;
+	}
+	else {
+		SDL_GetWindowSize(window, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+		SDL_Log("GetRendererOutputSize failed (%s); using window size", SDL_GetError());
+	}
+
+	// 4) Now it's safe to compute rectangles and create textures that depend on size
+	RecomputeScreenDstRect();
+	//OSDset("window=%dx%d, renderer=%dx%d", SCREEN_WIDTH, SCREEN_HEIGHT, rw, rh);
+
+	pause_scaling_choice = screen_scaling_mode;  // seed pause menu
+
 	// Para controlar calidad de escalado
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0); // "linear");
+	//SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0); // "linear");
 
 	/*
 	SDL_CHECK(screenReal = SDL_SetVideoMode(640, 480, 16, videoflag));
 	*/
-	 
-	/*
-	texture = SDL_CreateTexture(
-		renderer,
-		SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_STREAMING,
-		128, 128
-	);
-	*/
-	
 
 	screen = SDL_CreateRGBSurface(
-		 0,            // flags
-		 128*scale,        // ancho
-		 128*scale,       // alto
-		 32,  // profundidad
-		0x00FF0000,     // máscara roja
-		0x0000FF00,     // máscara verde
-		0x000000FF,     // máscara azul
-		0xFF000000      // máscara alfa
-	 );
-	 
-	 //SDL_CHECK(screen = SDL_SetVideoMode(320, 240, 32, videoflag)); //NO VA!!
-	
-	//SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
-	
-	//HCF
-	//SDL_WM_SetCaption("Celeste", NULL);
-	
+		0,               // flags
+		PICO8_W * scale, // ancho
+		PICO8_H * scale, // alto
+		32,              // profundidad
+		0x00FF0000,      // máscara roja
+		0x0000FF00,      // máscara verde
+		0x000000FF,      // máscara azul
+		0xFF000000       // máscara alfa
+	);
+
 	int mixflag = MIX_INIT_OGG;
-	 //int mixflag = MIX_INIT_MP3;
+	//int mixflag = MIX_INIT_MP3;
 	if (Mix_Init(mixflag) != mixflag) {
 		ErrLog("Mix_Init: %s\n", Mix_GetError());
 		//HCF: FALLA AQUI!!!
@@ -422,18 +444,7 @@ int mainy(){   //int argc, char** argv) {
 	ResetPalette();
 	SDL_ShowCursor(0);
 
-	//HCF-2022
-	/*
-	if (argc > 1) {
-		TAS = fopen(argv[1], "r");
-		if (!TAS) {
-			printf("couldn't open TAS file '%s': %s\n", argv[1], strerror(errno));
-		}
-	}
-	*/
-
 	//printf("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
-
 	//printf("now loading...\n");
 
 	{
@@ -462,9 +473,9 @@ int mainy(){   //int argc, char** argv) {
 
 		//HCF
 		//SDL_Rect rc = { 64+60, 60 };
-		SDL_Rect rc = {60, 60};
-		SDL_BlitSurface(loading,NULL,screen,&rc);
-		
+		SDL_Rect rc = { 60, 60 };
+		SDL_BlitSurface(loading, NULL, screen, &rc);
+
 		//HCF
 		rc.x = 64;
 		rc.y = 0;
@@ -488,11 +499,9 @@ int mainy(){   //int argc, char** argv) {
 
 		// Convertir a textura
 		SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, screen);
-		// Rect destino = tamaño ventana (640x480)
-		SDL_Rect dstRect = { 0, 0, 640, 480 };
 		SDL_RenderClear(renderer);
 		// Renderizar la textura escalada
-		SDL_RenderCopy(renderer, texture, NULL, &dstRect);
+		SDL_RenderCopy(renderer, texture, NULL, &screen_dstRect);
 		SDL_RenderPresent(renderer);
 		SDL_DestroyTexture(texture);
 
@@ -511,7 +520,8 @@ int mainy(){   //int argc, char** argv) {
 	if (TAS) {
 		// a consistent seed for tas playback
 		Celeste_P8_set_rndseed(8);
-	} else {
+	}
+	else {
 		Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
 	}
 
@@ -544,10 +554,10 @@ int mainy(){   //int argc, char** argv) {
 
 	SDL_FreeSurface(gfx);
 	SDL_FreeSurface(font);
-	for (int i = 0; i < (sizeof snd)/(sizeof *snd); i++) {
+	for (int i = 0; i < (sizeof snd) / (sizeof * snd); i++) {
 		if (snd[i]) Mix_FreeChunk(snd[i]);
 	}
-	for (int i = 0; i < (sizeof mus)/(sizeof *mus); i++) {
+	for (int i = 0; i < (sizeof mus) / (sizeof * mus); i++) {
 		if (mus[i]) Mix_FreeMusic(mus[i]);
 	}
 
@@ -570,19 +580,19 @@ static void ReadGamepadInput(Uint16* out_buttons);
 
 static void mainLoop(void) {
 	const Uint8* kbstate = SDL_GetKeyState(NULL);
-		
+
 	static int reset_input_timer = 0;
 	//hold F9 (select+start+y) to reset
 	if (initial_game_state != NULL
 #ifdef _3DS
-			&& kbstate[SDLK_LSHIFT] && kbstate[SDLK_ESCAPE] && kbstate[SDLK_F11]
+		&& kbstate[SDLK_LSHIFT] && kbstate[SDLK_ESCAPE] && kbstate[SDLK_F11]
 #else
-			&& kbstate[SDLK_F9]
+		&& kbstate[SDLK_F9]
 #endif
-	) {
+		) {
 		reset_input_timer++;
 		if (reset_input_timer >= 30) {
-			reset_input_timer=0;
+			reset_input_timer = 0;
 			//reset
 			OSDset("reset");
 			paused = 0;
@@ -592,7 +602,8 @@ static void mainLoop(void) {
 			Mix_HaltMusic();
 			Celeste_P8_init();
 		}
-	} else reset_input_timer = 0;
+	}
+	else reset_input_timer = 0;
 
 	Uint16 prev_buttons_state = buttons_state;
 	buttons_state = 0;
@@ -616,93 +627,111 @@ static void mainLoop(void) {
 
 
 	if (!((prev_buttons_state >> PSEUDO_BTN_PAUSE) & 1)
-	 && (buttons_state >> PSEUDO_BTN_PAUSE) & 1) {
+		&& (buttons_state >> PSEUDO_BTN_PAUSE) & 1) {
 		goto toggle_pause;
 	}
 
 	if (!((prev_buttons_state >> PSEUDO_BTN_EXIT) & 1)
-	 && (buttons_state >> PSEUDO_BTN_EXIT) & 1) {
+		&& (buttons_state >> PSEUDO_BTN_EXIT) & 1) {
 		goto press_exit;
 	}
 
 	if (!((prev_buttons_state >> PSEUDO_BTN_SAVE_STATE) & 1)
-	 && (buttons_state >> PSEUDO_BTN_SAVE_STATE) & 1) {
+		&& (buttons_state >> PSEUDO_BTN_SAVE_STATE) & 1) {
 		goto save_state;
 	}
 
 	if (!((prev_buttons_state >> PSEUDO_BTN_LOAD_STATE) & 1)
-	 && (buttons_state >> PSEUDO_BTN_LOAD_STATE) & 1) {
+		&& (buttons_state >> PSEUDO_BTN_LOAD_STATE) & 1) {
 		goto load_state;
 	}
 #endif
 
 	SDL_Event ev;
 	while (SDL_PollEvent(&ev)) switch (ev.type) {
-		case SDL_QUIT: running = 0; break;
-		case SDL_KEYDOWN: {
+	case SDL_QUIT: running = 0; break;
+	case SDL_KEYDOWN: {
 #if SDL_MAJOR_VERSION >= 2
-			if (ev.key.repeat) break; //no key repeat
+		if (ev.key.repeat) break; //no key repeat
 #endif
-			if (ev.key.keysym.sym == SDLK_ESCAPE) { //do pause
-				toggle_pause:
-				if (paused) Mix_Resume(-1), Mix_ResumeMusic(); else Mix_Pause(-1), Mix_PauseMusic();
-				paused = !paused;
-				break;
-			} else if (ev.key.keysym.sym == SDLK_DELETE) { //exit
-				press_exit:
-				running = 0;
-				break;
-			} else if (ev.key.keysym.sym == SDLK_F11 && !(kbstate[SDLK_LSHIFT] || kbstate[SDLK_ESCAPE])) {
-				//if (SDL_WM_ToggleFullScreen(screenReal)) { //this doesn't work on windows..
-					//OSDset("toggle fullscreen");
-				//}
-				//screenReal = SDL_GetVideoSurface();
-				break;
-			} else if (0 && ev.key.keysym.sym == SDLK_5) {
-				Celeste_P8__DEBUG();
-				break;
-			} else if (ev.key.keysym.sym == SDLK_s && kbstate[SDLK_LSHIFT]) { //save state
-				save_state:
-				game_state = game_state ? game_state : SDL_malloc(Celeste_P8_get_state_size());
-				if (game_state) {
-					OSDset("save state");
-					Celeste_P8_save_state(game_state);
-					game_state_music = current_music;
-				}
-				break;
-			} else if (ev.key.keysym.sym == SDLK_d && kbstate[SDLK_LSHIFT]) { //load state
-				load_state:
-				if (game_state) {
-					OSDset("load state");
-					if (paused) paused = 0, Mix_Resume(-1), Mix_ResumeMusic();
-					Celeste_P8_load_state(game_state);
-					if (current_music != game_state_music) {
-						Mix_HaltMusic();
-						current_music = game_state_music;
-						if (game_state_music) Mix_PlayMusic(game_state_music, -1);
-					}
-				}
-				break;
-			} else if ( //toggle screenshake (e / L+R)
-#ifdef _3DS
-					(ev.key.keysym.sym == SDLK_d && kbstate[SDLK_s]) || (ev.key.keysym.sym == SDLK_s && kbstate[SDLK_d])
-#else
-					ev.key.keysym.sym == SDLK_e
-#endif
-					) {
-				enable_screenshake = !enable_screenshake;
-				OSDset("screenshake: %s", enable_screenshake ? "on" : "off");
-			} break;
+		if (ev.key.keysym.sym == SDLK_ESCAPE) { //do pause
+		toggle_pause:
+			if (paused) {
+				// unpausing: resume audio and hide menu
+				Mix_Resume(-1); Mix_ResumeMusic();
+				paused = 0;
+				pause_menu_active = 0;
+			}
+			else {
+				// pausing: pause audio and show menu
+				Mix_Pause(-1); Mix_PauseMusic();
+				paused = 1;
+				pause_menu_active = 1;
+				pause_menu_index = 0;
+				pause_scaling_choice = screen_scaling_mode;
+			}
+			break;
 		}
+		else if (ev.key.keysym.sym == SDLK_DELETE) { //exit
+		press_exit:
+			running = 0;
+			break;
+		}
+		else if (ev.key.keysym.sym == SDLK_F11 && !(kbstate[SDLK_LSHIFT] || kbstate[SDLK_ESCAPE])) {
+			//if (SDL_WM_ToggleFullScreen(screenReal)) { //this doesn't work on windows..
+				//OSDset("toggle fullscreen");
+			//}
+			//screenReal = SDL_GetVideoSurface();
+			break;
+		}
+		else if (0 && ev.key.keysym.sym == SDLK_5) {
+			Celeste_P8__DEBUG();
+			break;
+		}
+		else if (ev.key.keysym.sym == SDLK_s && kbstate[SDLK_LSHIFT]) { //save state
+		save_state:
+			game_state = game_state ? game_state : SDL_malloc(Celeste_P8_get_state_size());
+			if (game_state) {
+				OSDset("save state");
+				Celeste_P8_save_state(game_state);
+				game_state_music = current_music;
+			}
+			break;
+		}
+		else if (ev.key.keysym.sym == SDLK_d && kbstate[SDLK_LSHIFT]) { //load state
+		load_state:
+			if (game_state) {
+				OSDset("load state");
+				if (paused) paused = 0, Mix_Resume(-1), Mix_ResumeMusic();
+				Celeste_P8_load_state(game_state);
+				if (current_music != game_state_music) {
+					Mix_HaltMusic();
+					current_music = game_state_music;
+					if (game_state_music) Mix_PlayMusic(game_state_music, -1);
+				}
+			}
+			break;
+		}
+		else if ( //toggle screenshake (e / L+R)
+#ifdef _3DS
+		(ev.key.keysym.sym == SDLK_d && kbstate[SDLK_s]) || (ev.key.keysym.sym == SDLK_s && kbstate[SDLK_d])
+#else
+			ev.key.keysym.sym == SDLK_e
+#endif
+			) {
+			enable_screenshake = !enable_screenshake;
+			OSDset("screenshake: %s", enable_screenshake ? "on" : "off");
+		} break;
+	}
 	}
 
 	if (!TAS) {
 
 		//HCF: Con esto si que va!!!
 		//buttons_state = 255;
-		
+
 		//HCF Si que entra aqui!!
-		
+
 		/*
 		SDL_Rect rc;
 		rc.x = 0;
@@ -712,36 +741,112 @@ static void mainLoop(void) {
 		while (1);
 		*/
 
-		if (kbstate[SDLK_LEFT])  buttons_state |= (1<<0);
-		if (kbstate[SDLK_RIGHT]) buttons_state |= (1<<1);
-		if (kbstate[SDLK_UP])    buttons_state |= (1<<2);
-		if (kbstate[SDLK_DOWN])  buttons_state |= (1<<3);
+		if (kbstate[SDLK_LEFT])  buttons_state |= (1 << 0);
+		if (kbstate[SDLK_RIGHT]) buttons_state |= (1 << 1);
+		if (kbstate[SDLK_UP])    buttons_state |= (1 << 2);
+		if (kbstate[SDLK_DOWN])  buttons_state |= (1 << 3);
 		if (kbstate[SDLK_z] || kbstate[SDLK_c] || kbstate[SDLK_n])
 		{
 			buttons_state |= (1 << 4);
 			//HCF Aqui no entra, obviamente
 		}
-		if (kbstate[SDLK_x] || kbstate[SDLK_v] || kbstate[SDLK_m]) buttons_state |= (1<<5);
-	} else if (TAS && !paused) {
+		if (kbstate[SDLK_x] || kbstate[SDLK_v] || kbstate[SDLK_m]) buttons_state |= (1 << 5);
+	}
+	else if (TAS && !paused) {
 		static int t = 0;
 		t++;
-		if (t==1) buttons_state = 1<<4;
+		if (t == 1) buttons_state = 1 << 4;
 		else if (t > 80) {
 			int btn;
 			fscanf(TAS, "%d,", &btn);
 			buttons_state = btn;
-		} else buttons_state = 0;
+		}
+		else buttons_state = 0;
 	}
 
-	if (paused) {
-		//HCF
-		//const int x0 = 64 + (PICO8_W / 2 - 3 * 4), y0 = 8;
-		const int x0 = PICO8_W/2-3*4, y0 = 8;
+	// === pause menu navigation (DPAD + A/Start) ===
+	if (paused && pause_menu_active) {
+		// Edge helpers: true only on the frame the button goes down.
+#define EDGE_BIT(bs, prev, idx) (((((prev) >> (idx)) & 1) == 0) && (((bs) >> (idx)) & 1))
+		const _Bool edge_left = EDGE_BIT(buttons_state, prev_buttons_state, 0);
+		const _Bool edge_right = EDGE_BIT(buttons_state, prev_buttons_state, 1);
+		const _Bool edge_up = EDGE_BIT(buttons_state, prev_buttons_state, 2);
+		const _Bool edge_down = EDGE_BIT(buttons_state, prev_buttons_state, 3);
+		const _Bool edge_A = EDGE_BIT(buttons_state, prev_buttons_state, 4); // confirm / apply
+		// TODO: set START_BIT to whatever bit your input code uses for Start/pause toggle.
+		// Commonly this is 6, but change if yours differs.
+		const int START_BIT = 6;
+		const _Bool edge_START = EDGE_BIT(buttons_state, prev_buttons_state, START_BIT);
+#undef EDGE_BIT
 
-		p8_rectfill(x0-1,y0-1, 6*4+x0+1,6+y0+1, 6);
-		p8_rectfill(x0,y0, 6*4+x0,6+y0, 0);
-		p8_print("paused", x0+1, y0+1, 7);
-	} else {
+		// We now have only 2 rows: 0=Scaling, 1=Apply
+		if (edge_up)   pause_menu_index = (pause_menu_index + 1) % 2;  // wrap 0..1
+		if (edge_down) pause_menu_index = (pause_menu_index + 1) % 2;
+
+		// On "Scaling" row (row 0), change option with Left/Right
+		if (pause_menu_index == 0) {
+			if (edge_left)  pause_scaling_choice = (pause_scaling_choice + 2) % 3;
+			if (edge_right) pause_scaling_choice = (pause_scaling_choice + 1) % 3;
+		}
+
+		// A = Apply when on row 1
+		if (edge_A && pause_menu_index == 1) {
+			screen_scaling_mode = pause_scaling_choice;
+			RecomputeScreenDstRect();
+			OSDset("scaling: %s", scaling_names[screen_scaling_mode]);
+		}
+
+		// Start = unpause (always)
+		if (edge_START) {
+			Mix_Resume(-1);
+			Mix_ResumeMusic();
+			paused = 0;
+			pause_menu_active = 0;
+			buttons_state = 0;
+			prev_buttons_state = 0;
+		}
+	}
+
+
+	if (paused) {
+		// draw the game frame so any old OSD pixels get painted over
+		Celeste_P8_draw();  // <-- add this
+
+		// Always draw the small banner
+		DrawPausedBanner();
+
+		if (pause_menu_active) {
+			const int w = 120, h = 40;
+			const int x = (PICO8_W - w) / 2;
+			// const int y = 16;  // old
+			const int y = 26;     // new, lower
+
+			// panel frame
+			p8_rectfill(x - 2, y - 2, x + w + 2, y + h + 2, 6);
+			p8_rectfill(x - 1, y - 1, x + w + 1, y + h + 1, 0);
+
+			// centered title “MENU”
+			const char* title = "MENU";
+			int tw = 4 * (int)strlen(title);
+			p8_print(title, x + (w - tw) / 2, y + 2, 7);
+
+			const int row0 = y + 12;
+			p8_print("SCALING:", x + 8, row0, (pause_menu_index == 0) ? 10 : 7);
+
+			const char* val = scaling_names[pause_scaling_choice];
+			int vw = 4 * (int)strlen(val);
+			int right_half_left = x + w / 2;
+			int right_half_width = w / 2 - 8;
+			int vx = right_half_left + (right_half_width - vw) / 2;
+			p8_print(val, vx, row0, (pause_menu_index == 0) ? 10 : 7);
+
+			const char* t = "APPLY";
+			tw = 4 * (int)strlen(t);
+			p8_print(t, x + (w - tw) / 2, row0 + 8, (pause_menu_index == 1) ? 10 : 7);
+			OSDset("Scaling = %dx%d", screen_dstRect.w, screen_dstRect.h);
+		}
+	}
+	else {
 		Celeste_P8_update();
 		Celeste_P8_draw();
 	}
@@ -749,10 +854,10 @@ static void mainLoop(void) {
 
 	//HCF
 	SDL_Rect rc;
-	
+
 	rc.x = 64;
 	rc.y = 0;
-	
+
 	/*
 	rc.x = 128;
 	rc.y = 48;
@@ -769,11 +874,9 @@ static void mainLoop(void) {
 
 	// Convertir a textura
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, screen);
-	// Rect destino = tamaño ventana (640x480)
-	SDL_Rect dstRect = { 0, 0, 640, 480 };
 	SDL_RenderClear(renderer);
 	// Renderizar la textura escalada
-	SDL_RenderCopy(renderer, texture, NULL, &dstRect);
+	SDL_RenderCopy(renderer, texture, NULL, &screen_dstRect);
 	SDL_RenderPresent(renderer);
 	SDL_DestroyTexture(texture);
 
@@ -791,7 +894,7 @@ static void mainLoop(void) {
 	static int t = 0;
 	static unsigned frame_start = 0;
 	unsigned frame_end = SDL_GetTicks();
-	unsigned frame_time = frame_end-frame_start;
+	unsigned frame_time = frame_end - frame_start;
 	unsigned target_millis;
 	// frame timing for 30fps is 33.333... ms, but we only have integer granularity
 	// so alternate between 33 and 34 ms, like [33,33,34,33,33,34,...] which averages out to 33.333...
@@ -808,7 +911,7 @@ static void mainLoop(void) {
 }
 
 static int gettileflag(int, int);
-static void p8_line(int,int,int,int,unsigned char);
+static void p8_line(int, int, int, int, unsigned char);
 
 //lots of code from https://github.com/SDL-mirror/SDL/blob/bc59d0d4a2c814900a506d097a381077b9310509/src/video/SDL_surface.c#L625
 //coordinates should be scaled already
@@ -819,11 +922,11 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
 	/* If the destination rectangle is NULL, use the entire dest surface */
 	if (!dstrect)
 		dstrect = (fulldst = (SDL_Rect){ 0,0,dst->w,dst->h }, &fulldst);
-		//dstrect = (fulldst = (SDL_Rect){ 64,0,dst->w,dst->h }, &fulldst);
-		//HCF
-		
+	//dstrect = (fulldst = (SDL_Rect){ 64,0,dst->w,dst->h }, &fulldst);
+	//HCF
+
 	int srcx, srcy, w, h;
-	
+
 	/* clip the source rectangle to the source surface */
 	if (srcrect) {
 		int maxw, maxh;
@@ -850,7 +953,8 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
 		if (maxh < h)
 			h = maxh;
 
-	} else {
+	}
+	else {
 		srcx = srcy = 0;
 		w = src->w;
 		h = src->h;
@@ -858,7 +962,7 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
 
 	/* clip the destination rectangle against the clip rectangle */
 	{
-		SDL_Rect *clip = &dst->clip_rect;
+		SDL_Rect* clip = &dst->clip_rect;
 		int dx, dy;
 
 		dx = clip->x - dstrect->x;
@@ -886,7 +990,7 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
 		unsigned char* srcpix = src->pixels;
 		int srcpitch = src->pitch;
 		Uint32* dstpix = dst->pixels;
-    #define _blitter(dp, xflip) do                                                                  \
+#define _blitter(dp, xflip) do                                                                  \
     for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {                                       \
       unsigned char p = srcpix[!xflip ? srcx+x+(srcy+y)*srcpitch : srcx+(w-x-1)+(srcy+y)*srcpitch]; \
       if (p) dstpix[dstrect->x+x + (dstrect->y+y)*dst->w] = getcolor(dp);                           \
@@ -895,15 +999,15 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
 		else if (!color && flipx) _blitter(p, 1);
 		else if (color && !flipx) _blitter(color, 0);
 		else if (!color && !flipx) _blitter(p, 0);
-		#undef _blitter
+#undef _blitter
 	}
 }
 
 static void p8_rectfill(int x0, int y0, int x1, int y1, int col) {
-	int w = (x1 - x0 + 1)*scale;
-	int h = (y1 - y0 + 1)*scale;
+	int w = (x1 - x0 + 1) * scale;
+	int h = (y1 - y0 + 1) * scale;
 	if (w > 0 && h > 0) {
-		SDL_Rect rc = {x0*scale,y0*scale, w,h};
+		SDL_Rect rc = { x0 * scale,y0 * scale, w,h };
 		SDL_FillRect(screen, &rc, getcolor(col));
 	}
 }
@@ -911,13 +1015,13 @@ static void p8_rectfill(int x0, int y0, int x1, int y1, int col) {
 static void p8_print(const char* str, int x, int y, int col) {
 	for (char c = *str; c; c = *(++str)) {
 		c &= 0x7F;
-		SDL_Rect srcrc = {8*(c%16), 8*(c/16)};
+		SDL_Rect srcrc = { 8 * (c % 16), 8 * (c / 16) };
 		srcrc.x *= scale;
 		srcrc.y *= scale;
-		srcrc.w = srcrc.h = 8*scale;
-		
-		SDL_Rect dstrc = {x*scale, y*scale, scale, scale};
-		Xblit(font, &srcrc, screen, &dstrc, col, 0,0);
+		srcrc.w = srcrc.h = 8 * scale;
+
+		SDL_Rect dstrc = { x * scale, y * scale, scale, scale };
+		Xblit(font, &srcrc, screen, &dstrc, col, 0, 0);
 		x += 4;
 	}
 }
@@ -931,241 +1035,245 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	va_list args;
 	int ret = 0;
 	va_start(args, call);
-	
-	#define   INT_ARG() va_arg(args, int)
-	#define  BOOL_ARG() (Celeste_P8_bool_t)va_arg(args, int)
-	#define RET_INT(_i)   do {ret = (_i); goto end;} while (0)
-	#define RET_BOOL(_b) RET_INT(!!(_b))
+
+#define   INT_ARG() va_arg(args, int)
+#define  BOOL_ARG() (Celeste_P8_bool_t)va_arg(args, int)
+#define RET_INT(_i)   do {ret = (_i); goto end;} while (0)
+#define RET_BOOL(_b) RET_INT(!!(_b))
 
 	switch (call) {
-		case CELESTE_P8_MUSIC: { //music(idx,fade,mask)
-			int index = INT_ARG();
-			int fade = INT_ARG();
-			int mask = INT_ARG();
+	case CELESTE_P8_MUSIC: { //music(idx,fade,mask)
+		int index = INT_ARG();
+		int fade = INT_ARG();
+		int mask = INT_ARG();
 
-			(void)mask; //we do not care about this since sdl mixer keeps sounds and music separate
-			
-			if (index == -1) { //stop playing
-				Mix_FadeOutMusic(fade);
-				current_music = NULL;
-			} else if (mus[index/10]) {
-				Mix_Music* musi = mus[index/10];
-				current_music = musi;
-				Mix_FadeInMusic(musi, -1, fade);
-			}
-		} break;
-		case CELESTE_P8_SPR: { //spr(sprite,x,y,cols,rows,flipx,flipy)
-			int sprite = INT_ARG();
-			int x = INT_ARG();
-			int y = INT_ARG();
-			int cols = INT_ARG();
-			int rows = INT_ARG();
-			int flipx = BOOL_ARG();
-			int flipy = BOOL_ARG();
+		(void)mask; //we do not care about this since sdl mixer keeps sounds and music separate
 
-			(void)cols;
-			(void)rows;
+		if (index == -1) { //stop playing
+			Mix_FadeOutMusic(fade);
+			current_music = NULL;
+		}
+		else if (mus[index / 10]) {
+			Mix_Music* musi = mus[index / 10];
+			current_music = musi;
+			Mix_FadeInMusic(musi, -1, fade);
+		}
+	} break;
+	case CELESTE_P8_SPR: { //spr(sprite,x,y,cols,rows,flipx,flipy)
+		int sprite = INT_ARG();
+		int x = INT_ARG();
+		int y = INT_ARG();
+		int cols = INT_ARG();
+		int rows = INT_ARG();
+		int flipx = BOOL_ARG();
+		int flipy = BOOL_ARG();
 
-			assert(rows == 1 && cols == 1);
+		(void)cols;
+		(void)rows;
 
-			if (sprite >= 0) {
-				SDL_Rect srcrc = {
-					8*(sprite % 16),
-					8*(sprite / 16)
-				};
-				srcrc.x *= scale;
-				srcrc.y *= scale;
-				srcrc.w = srcrc.h = scale*8;
-				SDL_Rect dstrc = {
-					//HCF
-					//64+(x - camera_x)* scale, (y - camera_y)* scale,
-					(x - camera_x)*scale, (y - camera_y)*scale,
-					scale, scale
-				};
-				Xblit(gfx, &srcrc, screen, &dstrc, 0,flipx,flipy);
-			}
-		} break;
-		case CELESTE_P8_BTN: { //btn(b)
-			int b = INT_ARG();
-			assert(b >= 0 && b <= 5); 
-			RET_BOOL(buttons_state & (1 << b));
-		} break;
-		case CELESTE_P8_SFX: { //sfx(id)
-			int id = INT_ARG();
-		
-			if (id < (sizeof snd) / (sizeof*snd) && snd[id])
-				Mix_PlayChannel(-1, snd[id], 0);
-		} break;
-		case CELESTE_P8_PAL: { //pal(a,b)
-			int a = INT_ARG();
-			int b = INT_ARG();
-			if (a >= 0 && a < 16 && b >= 0 && b < 16) {
-				//swap palette colors
-				palette[a] = base_palette[b];
-			}
-		} break;
-		case CELESTE_P8_PAL_RESET: { //pal()
-			ResetPalette();
-		} break;
-		case CELESTE_P8_CIRCFILL: { //circfill(x,y,r,col)
-			int cx = INT_ARG() - camera_x;
-			int cy = INT_ARG() - camera_y;
-			int r = INT_ARG();
-			int col = INT_ARG();
+		assert(rows == 1 && cols == 1);
 
-			int realcolor = getcolor(col);
+		if (sprite >= 0) {
+			SDL_Rect srcrc = {
+				8 * (sprite % 16),
+				8 * (sprite / 16)
+			};
+			srcrc.x *= scale;
+			srcrc.y *= scale;
+			srcrc.w = srcrc.h = scale * 8;
+			SDL_Rect dstrc = {
+				//HCF
+				//64+(x - camera_x)* scale, (y - camera_y)* scale,
+				(x - camera_x) * scale, (y - camera_y) * scale,
+				scale, scale
+			};
+			Xblit(gfx, &srcrc, screen, &dstrc, 0, flipx, flipy);
+		}
+	} break;
+	case CELESTE_P8_BTN: { //btn(b)
+		int b = INT_ARG();
+		assert(b >= 0 && b <= 5);
+		RET_BOOL(buttons_state & (1 << b));
+	} break;
+	case CELESTE_P8_SFX: { //sfx(id)
+		int id = INT_ARG();
 
-			if (r <= 1) {
-				SDL_FillRect(screen, &(SDL_Rect){scale*(cx-1), scale*cy, scale*3, scale}, realcolor);
-				SDL_FillRect(screen, &(SDL_Rect){scale*cx, scale*(cy-1), scale, scale*3}, realcolor);
-			} else if (r <= 2) {
-				SDL_FillRect(screen, &(SDL_Rect){scale*(cx-2), scale*(cy-1), scale*5, scale*3}, realcolor);
-				SDL_FillRect(screen, &(SDL_Rect){scale*(cx-1), scale*(cy-2), scale*3, scale*5}, realcolor);
-			} else if (r <= 3) {
-				SDL_FillRect(screen, &(SDL_Rect){scale*(cx-3), scale*(cy-1), scale*7, scale*3}, realcolor);
-				SDL_FillRect(screen, &(SDL_Rect){scale*(cx-1), scale*(cy-3), scale*3, scale*7}, realcolor);
-				SDL_FillRect(screen, &(SDL_Rect){scale*(cx-2), scale*(cy-2), scale*5, scale*5}, realcolor);
-			} else { //i dont think the game uses this
-				int f = 1 - r; //used to track the progress of the drawn circle (since its semi-recursive)
-				int ddFx = 1; //step x
-				int ddFy = -2 * r; //step y
-				int x = 0;
-				int y = r;
+		if (id < (sizeof snd) / (sizeof * snd) && snd[id])
+			Mix_PlayChannel(-1, snd[id], 0);
+	} break;
+	case CELESTE_P8_PAL: { //pal(a,b)
+		int a = INT_ARG();
+		int b = INT_ARG();
+		if (a >= 0 && a < 16 && b >= 0 && b < 16) {
+			//swap palette colors
+			palette[a] = base_palette[b];
+		}
+	} break;
+	case CELESTE_P8_PAL_RESET: { //pal()
+		ResetPalette();
+	} break;
+	case CELESTE_P8_CIRCFILL: { //circfill(x,y,r,col)
+		int cx = INT_ARG() - camera_x;
+		int cy = INT_ARG() - camera_y;
+		int r = INT_ARG();
+		int col = INT_ARG();
 
-				//this algorithm doesn't account for the diameters
-				//so we have to set them manually
-				p8_line(cx,cy-y, cx,cy+r, col);
-				p8_line(cx+r,cy, cx-r,cy, col);
+		int realcolor = getcolor(col);
 
-				while (x < y) {
-					if (f >= 0) {
-						y--;
-						ddFy += 2;
-						f += ddFy;
-					}
-					x++;
-					ddFx += 2;
-					f += ddFx;
+		if (r <= 1) {
+			SDL_FillRect(screen, &(SDL_Rect){scale* (cx - 1), scale* cy, scale * 3, scale}, realcolor);
+			SDL_FillRect(screen, &(SDL_Rect){scale* cx, scale* (cy - 1), scale, scale * 3}, realcolor);
+		}
+		else if (r <= 2) {
+			SDL_FillRect(screen, &(SDL_Rect){scale* (cx - 2), scale* (cy - 1), scale * 5, scale * 3}, realcolor);
+			SDL_FillRect(screen, &(SDL_Rect){scale* (cx - 1), scale* (cy - 2), scale * 3, scale * 5}, realcolor);
+		}
+		else if (r <= 3) {
+			SDL_FillRect(screen, &(SDL_Rect){scale* (cx - 3), scale* (cy - 1), scale * 7, scale * 3}, realcolor);
+			SDL_FillRect(screen, &(SDL_Rect){scale* (cx - 1), scale* (cy - 3), scale * 3, scale * 7}, realcolor);
+			SDL_FillRect(screen, &(SDL_Rect){scale* (cx - 2), scale* (cy - 2), scale * 5, scale * 5}, realcolor);
+		}
+		else { //i dont think the game uses this
+			int f = 1 - r; //used to track the progress of the drawn circle (since its semi-recursive)
+			int ddFx = 1; //step x
+			int ddFy = -2 * r; //step y
+			int x = 0;
+			int y = r;
 
-					//build our current arc
-					p8_line(cx+x,cy+y, cx-x,cy+y, col);
-					p8_line(cx+x,cy-y, cx-x,cy-y, col);
-					p8_line(cx+y,cy+x, cx-y,cy+x, col);
-					p8_line(cx+y,cy-x, cx-y,cy-x, col);
+			//this algorithm doesn't account for the diameters
+			//so we have to set them manually
+			p8_line(cx, cy - y, cx, cy + r, col);
+			p8_line(cx + r, cy, cx - r, cy, col);
+
+			while (x < y) {
+				if (f >= 0) {
+					y--;
+					ddFy += 2;
+					f += ddFy;
 				}
+				x++;
+				ddFx += 2;
+				f += ddFx;
+
+				//build our current arc
+				p8_line(cx + x, cy + y, cx - x, cy + y, col);
+				p8_line(cx + x, cy - y, cx - x, cy - y, col);
+				p8_line(cx + y, cy + x, cx - y, cy + x, col);
+				p8_line(cx + y, cy - x, cx - y, cy - x, col);
 			}
-		} break;
-		case CELESTE_P8_PRINT: { //print(str,x,y,col)
-			const char* str = va_arg(args, const char*);
-			int x = INT_ARG() - camera_x;
-			int y = INT_ARG() - camera_y;
-			int col = INT_ARG() % 16;
+		}
+	} break;
+	case CELESTE_P8_PRINT: { //print(str,x,y,col)
+		const char* str = va_arg(args, const char*);
+		int x = INT_ARG() - camera_x;
+		int y = INT_ARG() - camera_y;
+		int col = INT_ARG() % 16;
 
 #ifdef _3DS
-			if (!strcmp(str, "x+c")) {
-				//this is confusing, as 3DS uses a+b button, so use this hack to make it more appropiate
-				str = "a+b";
-			}
+		if (!strcmp(str, "x+c")) {
+			//this is confusing, as 3DS uses a+b button, so use this hack to make it more appropiate
+			str = "a+b";
+		}
 #endif
 
-			p8_print(str,x,y,col);
-		} break;
-		case CELESTE_P8_RECTFILL: { //rectfill(x0,y0,x1,y1,col)
-			int x0 = INT_ARG() - camera_x;
-			int y0 = INT_ARG() - camera_y;
-			int x1 = INT_ARG() - camera_x;
-			int y1 = INT_ARG() - camera_y;
-			int col = INT_ARG();
+		p8_print(str, x, y, col);
+	} break;
+	case CELESTE_P8_RECTFILL: { //rectfill(x0,y0,x1,y1,col)
+		int x0 = INT_ARG() - camera_x;
+		int y0 = INT_ARG() - camera_y;
+		int x1 = INT_ARG() - camera_x;
+		int y1 = INT_ARG() - camera_y;
+		int col = INT_ARG();
 
-			p8_rectfill(x0,y0,x1,y1,col);
-		} break;
-		case CELESTE_P8_LINE: { //line(x0,y0,x1,y1,col)
-			int x0 = INT_ARG() - camera_x;
-			int y0 = INT_ARG() - camera_y;
-			int x1 = INT_ARG() - camera_x;
-			int y1 = INT_ARG() - camera_y;
-			int col = INT_ARG();
+		p8_rectfill(x0, y0, x1, y1, col);
+	} break;
+	case CELESTE_P8_LINE: { //line(x0,y0,x1,y1,col)
+		int x0 = INT_ARG() - camera_x;
+		int y0 = INT_ARG() - camera_y;
+		int x1 = INT_ARG() - camera_x;
+		int y1 = INT_ARG() - camera_y;
+		int col = INT_ARG();
 
-			p8_line(x0,y0,x1,y1,col);
-		} break;
-		case CELESTE_P8_MGET: { //mget(tx,ty)
-			int tx = INT_ARG();
-			int ty = INT_ARG();
+		p8_line(x0, y0, x1, y1, col);
+	} break;
+	case CELESTE_P8_MGET: { //mget(tx,ty)
+		int tx = INT_ARG();
+		int ty = INT_ARG();
 
-			RET_INT(tilemap_data[tx+ty*128]);
-		} break;
-		case CELESTE_P8_CAMERA: { //camera(x,y)
-			if (enable_screenshake) {
-				camera_x = INT_ARG();
-				camera_y = INT_ARG();
-			}
-		} break;
-		case CELESTE_P8_FGET: { //fget(tile,flag)
-			int tile = INT_ARG();
-			int flag = INT_ARG();
+		RET_INT(tilemap_data[tx + ty * 128]);
+	} break;
+	case CELESTE_P8_CAMERA: { //camera(x,y)
+		if (enable_screenshake) {
+			camera_x = INT_ARG();
+			camera_y = INT_ARG();
+		}
+	} break;
+	case CELESTE_P8_FGET: { //fget(tile,flag)
+		int tile = INT_ARG();
+		int flag = INT_ARG();
 
-			RET_INT(gettileflag(tile, flag));
-		} break;
-		case CELESTE_P8_MAP: { //map(mx,my,tx,ty,mw,mh,mask)
-			int mx = INT_ARG(), my = INT_ARG();
-			int tx = INT_ARG(), ty = INT_ARG();
-			int mw = INT_ARG(), mh = INT_ARG();
-			int mask = INT_ARG();
-			
-			for (int x = 0; x < mw; x++) {
-				for (int y = 0; y < mh; y++) {
-					int tile = tilemap_data[x + mx + (y + my)*128];
-					//hack
-					if (mask == 0 || (mask == 4 && tile_flags[tile] == 4) || gettileflag(tile, mask != 4 ? mask-1 : mask)) {
-						SDL_Rect srcrc = {
-							8*(tile % 16),
-							8*(tile / 16)
-						};
-						srcrc.x *= scale;
-						srcrc.y *= scale;
-						srcrc.w = srcrc.h = scale*8;
-						SDL_Rect dstrc = {
-							//HCF
-							//64+(tx + x * 8 - camera_x)* scale, (ty + y * 8 - camera_y)* scale,
-							(tx+x*8 - camera_x)*scale, (ty+y*8 - camera_y)*scale,
-							scale*8, scale*8
-						};
+		RET_INT(gettileflag(tile, flag));
+	} break;
+	case CELESTE_P8_MAP: { //map(mx,my,tx,ty,mw,mh,mask)
+		int mx = INT_ARG(), my = INT_ARG();
+		int tx = INT_ARG(), ty = INT_ARG();
+		int mw = INT_ARG(), mh = INT_ARG();
+		int mask = INT_ARG();
 
-						if (0) {
-							srcrc.x = srcrc.y = 0;
-							srcrc.w = srcrc.h = 8;
-							dstrc.x = x*8, dstrc.y = y*8;
-							dstrc.w = dstrc.h = 8;
-						}
+		for (int x = 0; x < mw; x++) {
+			for (int y = 0; y < mh; y++) {
+				int tile = tilemap_data[x + mx + (y + my) * 128];
+				//hack
+				if (mask == 0 || (mask == 4 && tile_flags[tile] == 4) || gettileflag(tile, mask != 4 ? mask - 1 : mask)) {
+					SDL_Rect srcrc = {
+						8 * (tile % 16),
+						8 * (tile / 16)
+					};
+					srcrc.x *= scale;
+					srcrc.y *= scale;
+					srcrc.w = srcrc.h = scale * 8;
+					SDL_Rect dstrc = {
+						//HCF
+						//64+(tx + x * 8 - camera_x)* scale, (ty + y * 8 - camera_y)* scale,
+						(tx + x * 8 - camera_x) * scale, (ty + y * 8 - camera_y) * scale,
+						scale * 8, scale * 8
+					};
 
-						Xblit(gfx, &srcrc, screen, &dstrc, 0, 0, 0);
+					if (0) {
+						srcrc.x = srcrc.y = 0;
+						srcrc.w = srcrc.h = 8;
+						dstrc.x = x * 8, dstrc.y = y * 8;
+						dstrc.w = dstrc.h = 8;
 					}
+
+					Xblit(gfx, &srcrc, screen, &dstrc, 0, 0, 0);
 				}
 			}
-		} break;
+		}
+	} break;
 	}
 
-	end:
+end:
 	va_end(args);
 	return ret;
 }
 
 static int gettileflag(int tile, int flag) {
-	return tile < sizeof(tile_flags)/sizeof(*tile_flags) && (tile_flags[tile] & (1 << flag)) != 0;
+	return tile < sizeof(tile_flags) / sizeof(*tile_flags) && (tile_flags[tile] & (1 << flag)) != 0;
 }
 
 //coordinates should NOT be scaled before calling this
 static void p8_line(int x0, int y0, int x1, int y1, unsigned char color) {
-	#define CLAMP(v,min,max) v = v < min ? min : v >= max ? max-1 : v;
-	CLAMP(x0,0,screen->w);
-	CLAMP(y0,0,screen->h);
-	CLAMP(x1,0,screen->w);
-	CLAMP(y1,0,screen->h);
+#define CLAMP(v,min,max) v = v < min ? min : v >= max ? max-1 : v;
+	CLAMP(x0, 0, screen->w);
+	CLAMP(y0, 0, screen->h);
+	CLAMP(x1, 0, screen->w);
+	CLAMP(y1, 0, screen->h);
 
 	Uint32 realcolor = getcolor(color);
 
-	#undef CLAMP
-  #define PLOT(x,y) do {                                                        \
+#undef CLAMP
+#define PLOT(x,y) do {                                                        \
      SDL_FillRect(screen, &(SDL_Rect){x*scale,y*scale,scale,scale}, realcolor); \
 	} while (0)
 	int sx, sy, dx, dy, err, e2;
@@ -1178,9 +1286,10 @@ static void p8_line(int x0, int y0, int x1, int y1, unsigned char color) {
 	err = dx - dy;
 	if (!dy && !dx) return;
 	else if (!dx) { //vertical line
-		for (int y = y0; y != y1; y += sy) PLOT(x0,y);
-	} else if (!dy) { //horizontal line
-		for (int x = x0; x != x1; x += sx) PLOT(x,y0);
+		for (int y = y0; y != y1; y += sy) PLOT(x0, y);
+	}
+	else if (!dy) { //horizontal line
+		for (int x = x0; x != x1; x += sx) PLOT(x, y0);
 	} while (x0 != x1 || y0 != y1) {
 		PLOT(x0, y0);
 		e2 = 2 * err;
@@ -1193,7 +1302,7 @@ static void p8_line(int x0, int y0, int x1, int y1, unsigned char color) {
 			y0 += sy;
 		}
 	}
-	#undef PLOT
+#undef PLOT
 }
 
 #if SDL_MAJOR_VERSION >= 2
@@ -1225,19 +1334,19 @@ static struct mapping controller_mappings[30] = {
 static const Uint16 stick_deadzone = 32767 / 2; //about half
 
 static void ReadGamepadInput(Uint16* out_buttons) {
-	
+
 	//HCF desperate and futile attempt to fix the up+left+B issue
 	*out_buttons = 0;
 
 	SDL_PumpEvents();
 	SDL_JoystickUpdate(); //manual refresh of the gamepad(s)
-	
+
 	/*
 	static _Bool read_config = 0;
 	if (!read_config) {
 		read_config = 1;
-		const char* cfg_file_path = "D:\\ccleste-input-cfg.txt"; 
-		
+		const char* cfg_file_path = "D:\\ccleste-input-cfg.txt";
+
 		FILE* cfg = fopen(cfg_file_path, "r");
 		if (cfg) {
 			int i;
@@ -1274,7 +1383,7 @@ static void ReadGamepadInput(Uint16* out_buttons) {
 			}
 		}
 	}
-	
+
 	static SDL_GameController* controller = NULL;
 	if (!controller) {
 		static int tries_left = 30;
@@ -1322,7 +1431,7 @@ static void ReadGamepadInput(Uint16* out_buttons) {
 	Uint8 dpad = SDL_JoystickGetHat(joystick, 0);
 	Uint8 abutton = SDL_JoystickGetButton(joystick, 0); //Get A-Button(0)
 	Uint8 bbutton = SDL_JoystickGetButton(joystick, 1);
-	Uint8 whitebutton = SDL_JoystickGetButton(joystick,5);
+	Uint8 whitebutton = SDL_JoystickGetButton(joystick, 5);
 	Uint8 blackbutton = SDL_JoystickGetButton(joystick, 4);
 	Uint8 startbutton = SDL_JoystickGetButton(joystick, 8);
 	Uint8 backbutton = SDL_JoystickGetButton(joystick, 9); //Get BACK-Button(9)
@@ -1387,7 +1496,7 @@ static void ReadGamepadInput(Uint16* out_buttons) {
 		pressed = 1;
 	else
 		pressed = 0;
-	
+
 	mask = ~(1 << 4);
 	*out_buttons = (*out_buttons & mask) | (pressed << 4);
 

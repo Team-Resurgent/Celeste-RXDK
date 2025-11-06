@@ -98,7 +98,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>xboxkrnl.lib;xapilibd.lib;d3d8d.lib;d3dx8d.lib;libSDL2x.lib;libSDL2x_image.lib;libSDL2x_mixer.lib;dsound.lib;xkbd.lib;libcmtd.lib</AdditionalDependencies>
+      <AdditionalDependencies>xboxkrnl.lib;xapilibd.lib;d3d8d.lib;d3dx8d.lib;libSDL2x.lib;libSDL2x_image.lib;libSDL2x_mixer.lib;libcmtd.lib;dsound.lib;xkbd.lib</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <BaseAddress>
       </BaseAddress>
