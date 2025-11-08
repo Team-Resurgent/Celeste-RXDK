@@ -16,9 +16,6 @@
     <ClCompile Include="source\sdl12main.c" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Media\Copy Assets Here.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="source\celeste.h" />
     <ClInclude Include="source\tilemap.h" />
   </ItemGroup>
@@ -66,6 +63,7 @@
     <LibraryPath>$(RXDK_LIBS)lib;$(ProjectDir)RXDK-SDL2x\libs\$(Configuration)</LibraryPath>
     <OutDir>$(ProjectDir)$(Configuration)\</OutDir>
     <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(ProjectDir)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(VC_IncludePath);$(RXDK_LIBS)include</IncludePath>
@@ -77,12 +75,13 @@
     <LibraryPath>$(RXDK_LIBS)lib;$(ProjectDir)RXDK-SDL2x\libs\$(Configuration)</LibraryPath>
     <OutDir>$(ProjectDir)$(Configuration)\</OutDir>
     <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(ProjectDir)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>XBOX;_XBOX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__XBOX__;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>
@@ -137,7 +136,7 @@ MKDIR "$(OutDir)XISO"
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>XBOX;_XBOX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__XBOX__;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>

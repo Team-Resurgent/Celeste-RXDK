@@ -97,17 +97,20 @@ static char* GetDataPath(char* path, int n, const char* fname) {
 #ifdef _3DS
 	snprintf(path, n, "romfs:/%s", fname);
 #else
-#ifdef _WIN32
+
+#ifdef _WIN32 || defined(__XBOX__)
 	char pathsep = '\\';
 #else
 	char pathsep = '/';
 #endif //_WIN32
-	//HCF
-	sprintf(path, "D:\\Media\\data%c%s", pathsep, fname);
-	//sprintf(path, "data%c%s", pathsep, fname);
-	//snprintf(path, n, "data%c%s", pathsep, fname);
-#endif //_3DS
 
+#ifdef __XBOX__
+	sprintf(path, "D:\\Media\\data%c%s", pathsep, fname);
+#else
+	snprintf(path, n, "data%c%s", pathsep, fname);
+#endif // __XBOX__
+
+#endif //_3DS
 	return path;
 }
 
@@ -165,8 +168,8 @@ static void loadbmpscale(char* filename, SDL_Surface** s) {
 	*s = surf;
 }
 
-#define LOGLOAD(w) //printf("loading %s...", w)
-#define LOGDONE() //printf("done\n")
+#define LOGLOAD(w) SDL_Log("loading %s...", w)
+#define LOGDONE() SDL_Log("done\n")
 
 static void LoadData(void) {
 	LOGLOAD("gfx.bmp");
@@ -196,40 +199,16 @@ static void LoadData(void) {
 		int id = musids[iid];
 		char fname[20];
 
-		//HCF Because only WAV is supported in SDL2 currently
-		sprintf(fname, "mus%i.WAV", id);
-		//sprintf(fname, "mus%i.ogg", id);
+		sprintf(fname, "mus%i.ogg", id);
 
 		LOGLOAD(fname);
 		char path[4096];
 		GetDataPath(path, sizeof path, fname);
 		mus[id / 10] = Mix_LoadMUS(path);
-		//mus[id / 10] = Mix_LoadMUS("D:\\data\\mus0.wav");
 
 		if (!mus[id / 10]) {
 			ErrLog("mus%i: Mix_LoadMUS: %s\n", id, Mix_GetError());
-
-			//HCF ESTA DANDO ERROR AQUI!!!
-			/*
-			SDL_Rect rc;
-			rc.x = 0;
-			rc.y = 0;
-			SDL_FillRect(screenReal, NULL, SDL_MapRGB(screenReal->format, 255, 0, 0));
-			SDL_Flip(screenReal);
-			SDL_Delay(2000);
-			*/
-		}
-		else
-		{
-			//HCF No lee bien ninguno
-			/*
-			SDL_Rect rc;
-			rc.x = 0;
-			rc.y = 0;
-			SDL_FillRect(screenReal, NULL, SDL_MapRGB(screenReal->format, 0, 255, 0));
-			SDL_Flip(screenReal);
-			SDL_Delay(2000);
-			*/
+			return -1;
 		}
 		LOGDONE();
 	}
@@ -275,7 +254,7 @@ static void OSDdraw(void) {
 }
 
 static void DrawPausedBanner(void) {
-	const char* t = "PAUSED";
+	const char* t = "paused";
 	const int tw = 4 * (int)strlen(t);     // p8_print is 4px per char
 	const int x0 = (PICO8_W - tw) / 2;
 	const int y0 = 8;
@@ -284,8 +263,6 @@ static void DrawPausedBanner(void) {
 	p8_rectfill(x0, y0, x0 + tw, y0 + 6, 0);
 	p8_print(t, x0 + 1, y0 + 1, 7);
 }
-
-
 
 static Mix_Music* current_music = NULL;
 static _Bool enable_screenshake = 1;
@@ -310,7 +287,7 @@ static int screen_scaling_mode = SCALE_INT;   // runtime-selected scaling
 static _Bool pause_menu_active = 0;
 static int pause_menu_index = 0;              // 0: Scaling row, 1: Apply, 2: Resume
 static int pause_scaling_choice = 0;          // temp choice while paused
-static const char* scaling_names[] = { "Integer", "Aspect", "Stretched" };
+static const char* scaling_names[] = { "integer", "aspect", "stretched" };
 
 SDL_Rect get_integer_scale_rectangle() {
 	// Calculate the maximum integer scale that fits within the target resolution
@@ -413,34 +390,28 @@ int mainy() {   //int argc, char** argv) {
 
 	pause_scaling_choice = screen_scaling_mode;  // seed pause menu
 
-	// Para controlar calidad de escalado
-	//SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0); // "linear");
-
-	/*
-	SDL_CHECK(screenReal = SDL_SetVideoMode(640, 480, 16, videoflag));
-	*/
-
 	screen = SDL_CreateRGBSurface(
 		0,               // flags
-		PICO8_W * scale, // ancho
-		PICO8_H * scale, // alto
-		32,              // profundidad
-		0x00FF0000,      // máscara roja
-		0x0000FF00,      // máscara verde
-		0x000000FF,      // máscara azul
-		0xFF000000       // máscara alfa
+		PICO8_W * scale, // weight
+		PICO8_H * scale, // height
+		32,              // bit-depth
+		0x00FF0000,      // Red
+		0x0000FF00,      // Green
+		0x000000FF,      // Blue
+		0xFF000000       // Alfa
 	);
 
 	int mixflag = MIX_INIT_OGG;
-	//int mixflag = MIX_INIT_MP3;
 	if (Mix_Init(mixflag) != mixflag) {
 		ErrLog("Mix_Init: %s\n", Mix_GetError());
-		//HCF: FALLA AQUI!!!
-		//return 0;
+		return -1;
 	}
+
 	if (Mix_OpenAudio(22050, AUDIO_S16SYS, 1, 1024) < 0) {
 		ErrLog("Mix_Init: %s\n", Mix_GetError());
+		return -1;
 	}
+
 	ResetPalette();
 	SDL_ShowCursor(0);
 
@@ -825,13 +796,13 @@ static void mainLoop(void) {
 			p8_rectfill(x - 2, y - 2, x + w + 2, y + h + 2, 6);
 			p8_rectfill(x - 1, y - 1, x + w + 1, y + h + 1, 0);
 
-			// centered title “MENU”
-			const char* title = "MENU";
+			// centered title MENU
+			const char* title = "menu";
 			int tw = 4 * (int)strlen(title);
 			p8_print(title, x + (w - tw) / 2, y + 2, 7);
 
 			const int row0 = y + 12;
-			p8_print("SCALING:", x + 8, row0, (pause_menu_index == 0) ? 10 : 7);
+			p8_print("scaling:", x + 8, row0, (pause_menu_index == 0) ? 10 : 7);
 
 			const char* val = scaling_names[pause_scaling_choice];
 			int vw = 4 * (int)strlen(val);
@@ -840,10 +811,10 @@ static void mainLoop(void) {
 			int vx = right_half_left + (right_half_width - vw) / 2;
 			p8_print(val, vx, row0, (pause_menu_index == 0) ? 10 : 7);
 
-			const char* t = "APPLY";
+			const char* t = "apply";
 			tw = 4 * (int)strlen(t);
 			p8_print(t, x + (w - tw) / 2, row0 + 8, (pause_menu_index == 1) ? 10 : 7);
-			OSDset("Scaling = %dx%d", screen_dstRect.w, screen_dstRect.h);
+			OSDset("scaling = %dx%d", screen_dstRect.w, screen_dstRect.h);
 		}
 	}
 	else {
@@ -858,24 +829,8 @@ static void mainLoop(void) {
 	rc.x = 64;
 	rc.y = 0;
 
-	/*
-	rc.x = 128;
-	rc.y = 48;
-	*/
-
-	/*
-	SDL_Rect roc;
-	roc.x = 0;
-	roc.y = 16;
-	roc.w = screen->w;
-	roc.h = screen->h - 16;
-	SDL_BlitSurface(screen, &roc, screenReal, &rc);
-	*/
-
-	// Convertir a textura
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, screen);
 	SDL_RenderClear(renderer);
-	// Renderizar la textura escalada
 	SDL_RenderCopy(renderer, texture, NULL, &screen_dstRect);
 	SDL_RenderPresent(renderer);
 	SDL_DestroyTexture(texture);
@@ -1334,14 +1289,11 @@ static struct mapping controller_mappings[30] = {
 static const Uint16 stick_deadzone = 32767 / 2; //about half
 
 static void ReadGamepadInput(Uint16* out_buttons) {
-
-	//HCF desperate and futile attempt to fix the up+left+B issue
 	*out_buttons = 0;
 
 	SDL_PumpEvents();
 	SDL_JoystickUpdate(); //manual refresh of the gamepad(s)
 
-	/*
 	static _Bool read_config = 0;
 	if (!read_config) {
 		read_config = 1;
@@ -1414,102 +1366,6 @@ static void ReadGamepadInput(Uint16* out_buttons) {
 		Uint16 mask = ~(1 << mapping.pico8_btn);
 		*out_buttons = (*out_buttons & mask) | (pressed << mapping.pico8_btn);
 	}
-	*/
-
-	//joystick -> dpad input
-	/*
-	Sint16 x_axis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
-	Sint16 y_axis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
-	if (x_axis < -stick_deadzone) *out_buttons |= (1 << 0); //left
-	if (x_axis >  stick_deadzone) *out_buttons |= (1 << 1); //right
-	if (y_axis < -stick_deadzone) *out_buttons |= (1 << 2); //up
-	if (y_axis >  stick_deadzone) *out_buttons |= (1 << 3); //down
-	*/
-
-	Sint16 joyx = SDL_JoystickGetAxis(joystick, 0);
-	Sint16 joyy = SDL_JoystickGetAxis(joystick, 1);
-	Uint8 dpad = SDL_JoystickGetHat(joystick, 0);
-	Uint8 abutton = SDL_JoystickGetButton(joystick, 0); //Get A-Button(0)
-	Uint8 bbutton = SDL_JoystickGetButton(joystick, 1);
-	Uint8 whitebutton = SDL_JoystickGetButton(joystick, 5);
-	Uint8 blackbutton = SDL_JoystickGetButton(joystick, 4);
-	Uint8 startbutton = SDL_JoystickGetButton(joystick, 8);
-	Uint8 backbutton = SDL_JoystickGetButton(joystick, 9); //Get BACK-Button(9)
-
-	// ----- Pause/Exit combos on Start press (edge-triggered) -----
-	static _Bool prevStart = 0;
-
-	// 1) Exit: Start + Back
-	if (startbutton && backbutton && !prevStart) {
-		*out_buttons |= (1 << PSEUDO_BTN_EXIT);
-	}
-	// 2) Pause: Start alone
-	else if (startbutton && !prevStart) {
-		*out_buttons |= (1 << PSEUDO_BTN_PAUSE);
-	}
-
-	prevStart = startbutton;
-
-	// ----- Load/Save combos on White Button Or Black Button press -----
-	if (whitebutton) {
-		*out_buttons |= (1 << PSEUDO_BTN_SAVE_STATE); // save
-	}
-	if (blackbutton) {
-		*out_buttons |= (1 << PSEUDO_BTN_LOAD_STATE); // load
-	}
-
-
-	if (joyx > 16384)
-		*out_buttons |= (1 << 1); //right
-
-	if (joyx < -16384)
-		*out_buttons |= (1 << 0); //left
-
-	if (joyy > 16384)
-		*out_buttons |= (1 << 3); //down
-
-	if (joyy < -16384)
-		*out_buttons |= (1 << 2); //up
-
-
-	if (dpad & SDL_HAT_UP)
-	{
-		*out_buttons |= (1 << 2); //up
-	}
-	if (dpad & SDL_HAT_DOWN)
-	{
-		*out_buttons |= (1 << 3); //down
-	}
-	if (dpad & SDL_HAT_LEFT)
-	{
-		*out_buttons |= (1 << 0); //left
-	}
-	if (dpad & SDL_HAT_RIGHT)
-	{
-		*out_buttons |= (1 << 1); //right
-	}
-
-	_Bool pressed = 0;
-	Uint16 mask = 0;
-
-	if (abutton)
-		pressed = 1;
-	else
-		pressed = 0;
-
-	mask = ~(1 << 4);
-	*out_buttons = (*out_buttons & mask) | (pressed << 4);
-
-	mask = 0;
-
-	if (bbutton)
-		pressed = 1;
-	else
-		pressed = 0;
-
-	mask = ~(1 << 5);
-	*out_buttons = (*out_buttons & mask) | (pressed << 5);
-
 }
 #endif
 
