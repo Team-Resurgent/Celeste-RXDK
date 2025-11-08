@@ -168,8 +168,13 @@ static void loadbmpscale(char* filename, SDL_Surface** s) {
 	*s = surf;
 }
 
+#ifdef _DEBUG
 #define LOGLOAD(w) SDL_Log("loading %s...", w)
 #define LOGDONE() SDL_Log("done\n")
+#else
+#define LOGLOAD(w)
+#define LOGDONE()
+#endif
 
 static void LoadData(void) {
 	LOGLOAD("gfx.bmp");
@@ -287,7 +292,9 @@ static int screen_scaling_mode = SCALE_INT;   // runtime-selected scaling
 static _Bool pause_menu_active = 0;
 static int pause_menu_index = 0;              // 0: Scaling row, 1: Apply, 2: Resume
 static int pause_scaling_choice = 0;          // temp choice while paused
+static int pause_screenshake_choice = 0;          // temp choice while paused
 static const char* scaling_names[] = { "integer", "aspect", "stretched" };
+static const char* screenshake_names[] = { "on", "off" };
 
 SDL_Rect get_integer_scale_rectangle() {
 	// Calculate the maximum integer scale that fits within the target resolution
@@ -388,7 +395,9 @@ int mainy() {   //int argc, char** argv) {
 	RecomputeScreenDstRect();
 	//OSDset("window=%dx%d, renderer=%dx%d", SCREEN_WIDTH, SCREEN_HEIGHT, rw, rh);
 
-	pause_scaling_choice = screen_scaling_mode;  // seed pause menu
+	// seed pause menu
+	pause_scaling_choice = screen_scaling_mode;
+	pause_screenshake_choice = enable_screenshake ? 0 : 1;
 
 	screen = SDL_CreateRGBSurface(
 		0,               // flags
@@ -640,6 +649,7 @@ static void mainLoop(void) {
 				pause_menu_active = 1;
 				pause_menu_index = 0;
 				pause_scaling_choice = screen_scaling_mode;
+				pause_screenshake_choice = enable_screenshake ? 0 : 1;
 			}
 			break;
 		}
@@ -719,7 +729,6 @@ static void mainLoop(void) {
 		if (kbstate[SDLK_z] || kbstate[SDLK_c] || kbstate[SDLK_n])
 		{
 			buttons_state |= (1 << 4);
-			//HCF Aqui no entra, obviamente
 		}
 		if (kbstate[SDLK_x] || kbstate[SDLK_v] || kbstate[SDLK_m]) buttons_state |= (1 << 5);
 	}
@@ -750,9 +759,9 @@ static void mainLoop(void) {
 		const _Bool edge_START = EDGE_BIT(buttons_state, prev_buttons_state, START_BIT);
 #undef EDGE_BIT
 
-		// We now have only 2 rows: 0=Scaling, 1=Apply
-		if (edge_up)   pause_menu_index = (pause_menu_index + 1) % 2;  // wrap 0..1
-		if (edge_down) pause_menu_index = (pause_menu_index + 1) % 2;
+		// We now have only 2 rows: 0=Scaling, 1=Screenshake, 2=Apply
+		if (edge_up)   pause_menu_index = (pause_menu_index + 1) % 3;  // wrap 0..2
+		if (edge_down) pause_menu_index = (pause_menu_index + 1) % 3;
 
 		// On "Scaling" row (row 0), change option with Left/Right
 		if (pause_menu_index == 0) {
@@ -760,9 +769,16 @@ static void mainLoop(void) {
 			if (edge_right) pause_scaling_choice = (pause_scaling_choice + 1) % 3;
 		}
 
-		// A = Apply when on row 1
-		if (edge_A && pause_menu_index == 1) {
+		// On "Screenshake" row (row 1), change option with Left/Right
+		if (pause_menu_index == 1) {
+			if (edge_left)  pause_screenshake_choice = (pause_screenshake_choice + 1) % 2;
+			if (edge_right) pause_screenshake_choice = (pause_screenshake_choice + 1) % 2;
+		}
+
+		// A = Apply when on row 2
+		if (edge_A && pause_menu_index == 2) {
 			screen_scaling_mode = pause_scaling_choice;
+			enable_screenshake = pause_screenshake_choice == 0;
 			RecomputeScreenDstRect();
 			OSDset("scaling: %s", scaling_names[screen_scaling_mode]);
 		}
@@ -801,6 +817,7 @@ static void mainLoop(void) {
 			int tw = 4 * (int)strlen(title);
 			p8_print(title, x + (w - tw) / 2, y + 2, 7);
 
+			// Scaling option
 			const int row0 = y + 12;
 			p8_print("scaling:", x + 8, row0, (pause_menu_index == 0) ? 10 : 7);
 
@@ -811,9 +828,20 @@ static void mainLoop(void) {
 			int vx = right_half_left + (right_half_width - vw) / 2;
 			p8_print(val, vx, row0, (pause_menu_index == 0) ? 10 : 7);
 
+			// Screenshake option
+			const int row1 = row0 + 10;
+			p8_print("screen shake:", x + 8, row1, (pause_menu_index == 1) ? 10 : 7);
+
+			const char* val_screen_shake = screenshake_names[pause_screenshake_choice];
+			vw = 4 * (int)strlen(val_screen_shake);
+			right_half_left = x + w / 2;
+			right_half_width = w / 2 - 8;
+			vx = right_half_left + (right_half_width - vw) / 2;
+			p8_print(val_screen_shake, vx, row1, (pause_menu_index == 1) ? 10 : 7);
+
 			const char* t = "apply";
 			tw = 4 * (int)strlen(t);
-			p8_print(t, x + (w - tw) / 2, row0 + 8, (pause_menu_index == 1) ? 10 : 7);
+			p8_print(t, x + (w - tw) / 2, row1 + 12, (pause_menu_index == 2) ? 10 : 7);
 			OSDset("scaling = %dx%d", screen_dstRect.w, screen_dstRect.h);
 		}
 	}

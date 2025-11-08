@@ -36,7 +36,7 @@ Follow the installation guide on the official repository:
 
 ### 2. RXDK SDL2x Port
 
-This project also uses the **RXDK Port of SDL2x**.  These have been included in this repo
+This project also uses the **RXDK Port of SDL2x**.  Make sure you do submodule init+update.
 
 🔗 [RXDK-SDL2x](https://github.com/Team-Resurgent/RXDK-SDL2x)
 
