@@ -18,27 +18,9 @@
 #include <3ds.h>
 #endif
 #include "celeste.h"
+#include "tilemap.h"
 
-static void ErrLog(char* fmt, ...) {
-
-#ifdef _3DS
-	/*FILE* f = fopen("sdmc:/ccleste.txt", "a");
-	if (!f) return;
-	fprintf(f, "%li \t", (long int)time(NULL));*/
-	FILE* f = stdout; //bottom screen console
-#else
-	//FILE* f = stderr;
-#endif
-	/*
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(f, fmt, ap);
-	va_end(ap);
-
-	if (f != stderr && f != stdout) fclose(f);
-	*/
-}
-
+#define ErrLog SDL_Log
 
 SDL_Window* window;
 SDL_Renderer* renderer;
@@ -46,7 +28,6 @@ SDL_Texture* texture;
 
 SDL_Surface* screen = NULL;
 SDL_Rect screen_dstRect;
-//SDL_Surface* screenReal = NULL;
 SDL_Surface* gfx = NULL;
 SDL_Surface* font = NULL;
 Mix_Chunk* snd[64] = { NULL };
@@ -55,12 +36,7 @@ Mix_Music* mus[6] = { NULL };
 #define PICO8_W 128
 #define PICO8_H 128
 
-#ifdef _3DS
-static const int scale = 2;
-#else
-//HCF
-static int scale = 1;  // 3;  // 2;  //4;
-#endif
+static int scale = 1;
 
 static const SDL_Color base_palette[16] = {
 	{0x00, 0x00, 0x00},
@@ -187,7 +163,7 @@ static void LoadData(void) {
 
 	static const char sndids[] = { 0,1,2,3,4,5,6,7,8,9,13,14,15,16,23,35,37,38,40,50,51,54,55 };
 	for (int iid = 0; iid < sizeof sndids; iid++) {
-		int id = sndids[iid];
+		const int id = sndids[iid];
 		char fname[20];
 		sprintf(fname, "snd%i.wav", id);
 		char path[4096];
@@ -199,9 +175,10 @@ static void LoadData(void) {
 		}
 		LOGDONE();
 	}
+
 	static const char musids[] = { 0,10,20,30,40 };
 	for (int iid = 0; iid < sizeof musids; iid++) {
-		int id = musids[iid];
+		const int id = musids[iid];
 		char fname[20];
 
 		sprintf(fname, "mus%i.ogg", id);
@@ -213,12 +190,10 @@ static void LoadData(void) {
 
 		if (!mus[id / 10]) {
 			ErrLog("mus%i: Mix_LoadMUS: %s\n", id, Mix_GetError());
-			return -1;
 		}
 		LOGDONE();
 	}
 }
-#include "tilemap.h"
 
 static Uint16 buttons_state = 0;
 
@@ -241,10 +216,10 @@ static void OSDset(const char* fmt, ...) {
 	va_start(ap, fmt);
 	_vsnprintf(osd_text, sizeof osd_text, fmt, ap);
 	osd_text[sizeof osd_text - 1] = '\0'; //make sure to add NUL terminator in case of truncation
-	//printf("%s\n", osd_text);
 	osd_timer = 30;
 	va_end(ap);
 }
+
 static void OSDdraw(void) {
 	if (osd_timer > 0) {
 		--osd_timer;
@@ -278,8 +253,6 @@ static void* game_state = NULL;
 static Mix_Music* game_state_music = NULL;
 static void mainLoop(void);
 static FILE* TAS = NULL;
-
-SDL_Joystick* joystick = NULL;
 
 // TODO: Clean up
 int SCREEN_WIDTH = 1920;
@@ -355,15 +328,6 @@ int mainy() {   //int argc, char** argv) {
 	SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("D:\\gamecontrollerdb.txt", "rb"), 1);
 	*/
 
-	//HCF
-	do
-	{
-		joystick = SDL_JoystickOpen(0);
-		if (joystick == 0)
-		{
-			SDL_Delay(500);
-		}
-	} while (joystick == 0);
 #endif
 
 	int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
@@ -373,7 +337,7 @@ int mainy() {   //int argc, char** argv) {
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");  // "nearest" / "0" / "1" / "2"
 
 	// 1) Create window
-	window = SDL_CreateWindow("Escalado SDL2",
+	window = SDL_CreateWindow("Celeste",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 
@@ -424,8 +388,10 @@ int mainy() {   //int argc, char** argv) {
 	ResetPalette();
 	SDL_ShowCursor(0);
 
-	//printf("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
-	//printf("now loading...\n");
+#ifdef _DEBUG
+	SDL_Log("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
+	SDL_Log("now loading...\n");
+#endif
 
 	{
 		const unsigned char loading_bmp[] = {
@@ -507,16 +473,6 @@ int mainy() {   //int argc, char** argv) {
 
 	Celeste_P8_init();
 
-	//printf("ready\n");
-	{
-		//FILE* start_fullscreen_f = fopen("ccleste-start-fullscreen.txt", "r");
-		//const char* start_fullscreen_v = getenv("CCLESTE_START_FULLSCREEN");
-		//if (start_fullscreen_f || (start_fullscreen_v && *start_fullscreen_v)) {
-			//SDL_WM_ToggleFullScreen(screenReal);
-		//}
-		//if (start_fullscreen_f) fclose(start_fullscreen_f);
-	}
-
 #ifdef _3DS
 	while (aptMainLoop()) mainLoop();
 #elif !defined(EMSCRIPTEN)
@@ -589,7 +545,7 @@ static void mainLoop(void) {
 	buttons_state = 0;
 
 #if SDL_MAJOR_VERSION >= 2
-	//SDL_GameControllerUpdate();
+	SDL_GameControllerUpdate();
 	ReadGamepadInput(&buttons_state);
 
 	//HCF QUITAR ESTO
@@ -707,7 +663,6 @@ static void mainLoop(void) {
 	}
 
 	if (!TAS) {
-
 		//HCF: Con esto si que va!!!
 		//buttons_state = 255;
 
